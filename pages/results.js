@@ -26,8 +26,9 @@ export default function Results({ session, player, loading }) {
   }
 
   const race = RACES.find(r => r.id === raceId)
-  const result = results.find(r => r.race_id === raceId)
-
+  const result = results.find(r => r.race_id === raceId) || null
+  const hasResult = !!result
+  
   return (
     <Layout session={session} player={player}>
       <div className="fade-up">
