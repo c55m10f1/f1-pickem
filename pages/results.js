@@ -29,7 +29,12 @@ export default function Results({ session, player, loading }) {
 
   const race = RACES.find(r => r.id === raceId)
   const result = ready ? (results.find(r => r.race_id === raceId) || null) : undefined
-
+  const actual = result ? [result.p1, result.p2, result.p3] : []
+  const exactMatch = (d, j) => result && d === actual[j]
+  const wrongSpot = (d, j) => result && !exactMatch(d, j) && actual.includes(d)
+  const driverColor = (d, j) => exactMatch(d, j) ? '#2ECC71' : wrongSpot(d, j) ? '#7ec8f0' : '#4a4a5a'
+  const driverWeight = (d, j) => (exactMatch(d, j) || wrongSpot(d, j)) ? 700 : 400
+  
   if (!ready) return (
     <Layout session={session} player={player}>
       <div style={{color:"#E8002D",fontFamily:"'Bebas Neue',sans-serif",fontSize:"1.4rem",letterSpacing:"4px",marginTop:"40px",textAlign:"center"}}>LOADING…</div>
@@ -90,11 +95,6 @@ export default function Results({ session, player, loading }) {
             {players.map((p, i) => {
               const pk = picks.find(pk => pk.player_id === p.id && pk.race_id === raceId)
               const sc = pk && !pk.dns && result ? calcScore(pk, result) : null
-              const actual = result ? [result.p1, result.p2, result.p3] : []
-              const exactMatch = (d, j) => result && d === actual[j]
-              const wrongSpot = (d, j) => result && !exactMatch(d, j) && actual.includes(d)
-              const driverColor = (d, j) => exactMatch(d, j) ? '#2ECC71' : wrongSpot(d, j) ? '#7ec8f0' : '#4a4a5a'
-              const driverWeight = (d, j) => (exactMatch(d, j) || wrongSpot(d, j)) ? 700 : 400
               const isPerfect = sc && sc.bonus === 5
               const isAllRight = sc && sc.bonus === 3
               const ptColor = (v) => v > 0 ? '#eef0f5' : '#2a2a3a'
