@@ -28,18 +28,14 @@ export default function Results({ session, player, loading }) {
   }
 
   const race = RACES.find(r => r.id === raceId)
-  const result = ready ? (results.find(r => r.race_id === raceId) || null) : undefined
-  const actual = result ? [result.p1, result.p2, result.p3] : []
-  const exactMatch = (d, j) => result && d === actual[j]
-  const wrongSpot = (d, j) => result && !exactMatch(d, j) && actual.includes(d)
-  const driverColor = (d, j) => exactMatch(d, j) ? '#2ECC71' : wrongSpot(d, j) ? '#7ec8f0' : '#4a4a5a'
-  const driverWeight = (d, j) => (exactMatch(d, j) || wrongSpot(d, j)) ? 700 : 400
-  
+
   if (!ready) return (
     <Layout session={session} player={player}>
       <div style={{color:"#E8002D",fontFamily:"'Bebas Neue',sans-serif",fontSize:"1.4rem",letterSpacing:"4px",marginTop:"40px",textAlign:"center"}}>LOADING…</div>
     </Layout>
   )
+
+  const result = results.find(r => r.race_id === raceId) || null
 
   return (
     <Layout session={session} player={player}>
@@ -55,7 +51,6 @@ export default function Results({ session, player, loading }) {
         </select>
 
         <Card className="!p-0 overflow-hidden">
-          {/* Race header */}
           <div className="bg-[#111118] px-4 py-3 border-b border-[#1e1e2c] flex justify-between items-center">
             <div>
               <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:"1.3rem",letterSpacing:"2px"}}>{race?.name}</div>
@@ -66,7 +61,6 @@ export default function Results({ session, player, loading }) {
             </span>
           </div>
 
-          {/* Podium */}
           {result && (
             <div className="bg-[#0d0d14] px-4 py-2.5 border-b border-[#1e1e2c] flex gap-4 font-mono text-sm">
               {[['P1', result.p1, '#FFD060'], ['P2', result.p2, '#C0C8D8'], ['P3', result.p3, '#CD8B5A']].map(([pos, drv, col]) => (
@@ -78,7 +72,6 @@ export default function Results({ session, player, loading }) {
             </div>
           )}
 
-          {/* Column headers - always show */}
           <div className="grid px-4 py-2 border-b border-[#1e1e2c]"
             style={{gridTemplateColumns:'90px 1fr 36px 36px 36px 46px 46px',gap:'4px'}}>
             <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:"0.55rem",color:"#333"}}>PLAYER</div>
@@ -90,11 +83,16 @@ export default function Results({ session, player, loading }) {
             <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:"0.55rem",color:"#333",textAlign:'center'}}>TOTAL</div>
           </div>
 
-          {/* Player rows - always use full grid */}
           <div>
             {players.map((p, i) => {
               const pk = picks.find(pk => pk.player_id === p.id && pk.race_id === raceId)
-              const sc = pk && !pk.dns && result ? calcScore(pk, result) : null
+              const res = results.find(r => r.race_id === raceId) || null
+              const actual = res ? [res.p1, res.p2, res.p3] : []
+              const exactMatch = (d, j) => d === actual[j]
+              const wrongSpot = (d, j) => !exactMatch(d, j) && actual.includes(d)
+              const driverColor = (d, j) => actual.length === 0 ? '#4a4a5a' : exactMatch(d, j) ? '#2ECC71' : wrongSpot(d, j) ? '#7ec8f0' : '#4a4a5a'
+              const driverWeight = (d, j) => actual.length > 0 && (exactMatch(d, j) || wrongSpot(d, j)) ? 700 : 400
+              const sc = pk && !pk.dns && res ? calcScore(pk, res) : null
               const isPerfect = sc && sc.bonus === 5
               const isAllRight = sc && sc.bonus === 3
               const ptColor = (v) => v > 0 ? '#eef0f5' : '#2a2a3a'
