@@ -71,20 +71,31 @@ export default function Results({ session, player, loading }) {
             {players.map((p, i) => {
               const pk = picks.find(pk => pk.player_id === p.id && pk.race_id === raceId)
               const sc = pk && !pk.dns && result ? calcScore(pk, result) : null
-              const hi = (d, a) => result && d === a
+              const actual = result ? [result.p1, result.p2, result.p3] : []
+              const exactMatch = (d, j) => result && d === actual[j]
+              const wrongSpot = (d, j) => result && !exactMatch(d, j) && actual.includes(d)
+              const isPerfect = sc && sc.bonus === 5
+              const isAllRight = sc && sc.bonus === 3
+              const driverColor = (d, j) => exactMatch(d, j) ? '#2ECC71' : wrongSpot(d, j) ? '#7ec8f0' : '#4a4a5a'
+              const driverWeight = (d, j) => (exactMatch(d, j) || wrongSpot(d, j)) ? 700 : 400
               return (
                 <div key={p.id} className="grid items-center px-4 py-3 gap-2"
                   style={{gridTemplateColumns:'90px 1fr auto', borderBottom: i < players.length - 1 ? '1px solid #0e0e16' : 'none', background: i % 2 === 0 ? 'transparent' : '#11111a'}}>
                   <div className="font-semibold text-sm">{p.name}</div>
-                  <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:"0.68rem",display:"flex",gap:"4px",flexWrap:"wrap"}}>
+                  <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:"0.68rem",display:"flex",gap:"4px",flexWrap:"wrap",alignItems:"center"}}>
                     {!pk ? <span className="text-[#2a2a3a]">no pick</span>
                       : pk.dns ? <span className="text-red-500">DNS</span>
-                      : [pk.p1, pk.p2, pk.p3].map((d, j) => (
-                        <span key={j}>
-                          <span style={{color: hi(d, [result?.p1,result?.p2,result?.p3][j]) ? '#2ECC71' : '#4a4a5a', fontWeight: hi(d, [result?.p1,result?.p2,result?.p3][j]) ? 700 : 400}}>{d}</span>
-                          {j < 2 && <span className="text-[#2a2a3a]"> / </span>}
-                        </span>
-                      ))}
+                      : <>
+                        {[pk.p1, pk.p2, pk.p3].map((d, j) => (
+                          <span key={j}>
+                            <span style={{color: driverColor(d,j), fontWeight: driverWeight(d,j)}}>{d}</span>
+                            {j < 2 && <span className="text-[#2a2a3a]"> / </span>}
+                          </span>
+                        ))}
+                        {isPerfect && <span style={{marginLeft:'6px'}}>🤯</span>}
+                        {isAllRight && <span style={{marginLeft:'6px'}}>🥂</span>}
+                      </>
+                    }
                   </div>
                   {sc ? (
                     <div className="flex gap-1.5 items-center">
@@ -96,6 +107,8 @@ export default function Results({ session, player, loading }) {
                         {sc.total}
                       </span>
                     </div>
+                  ) : <span className="text-[#2a2a3a] text-sm">—</span>}
+                </div>
                   ) : <span className="text-[#2a2a3a] text-sm">—</span>}
                 </div>
               )
