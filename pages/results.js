@@ -42,7 +42,7 @@ export default function Results({ session, player, loading }) {
           ))}
         </select>
 
-        <Card className="!p-0 overflow-hidden">
+        <Card className="!p-0 overflow-hidden" key={raceId + (result ? '1' : '0')}>
           {/* Race header */}
           <div className="bg-[#111118] px-4 py-3 border-b border-[#1e1e2c] flex justify-between items-center">
             <div>
