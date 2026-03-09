@@ -72,7 +72,7 @@ export default function Login() {
             {mode === 'signup' && (
               <div>
                 <div style={{fontSize:"0.68rem",color:"#555",letterSpacing:"1px",marginBottom:"6px",fontFamily:"'JetBrains Mono',monospace"}}>YOUR NAME</div>
-                <input type="text" value={name} onChange={e=>setName(e.target.value)} placeholder="Casey" />
+                <input type="text" value={name} onChange={e=>setName(e.target.value)} placeholder="Name" />
               </div>
             )}
             <div>
