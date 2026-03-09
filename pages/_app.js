@@ -24,12 +24,19 @@ export default function App({ Component, pageProps }) {
   }, [])
 
   async function fetchPlayer(userId) {
-    const { data } = await supabase
-      .from('players')
-      .select('*')
-      .eq('id', userId)
-      .single()
-    setPlayer(data)
+    for (let i = 0; i < 5; i++) {
+      const { data } = await supabase
+        .from('players')
+        .select('id, email, name, is_commissioner')
+        .eq('id', userId)
+        .maybeSingle()
+      if (data) {
+        setPlayer(data)
+        setLoading(false)
+        return
+      }
+      await new Promise(r => setTimeout(r, 600))
+    }
     setLoading(false)
   }
 
