@@ -111,7 +111,7 @@ export default function Picks({ session, player, loading }) {
       <div className="fade-up">
         <div className="mb-5">
           <h1 style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:"2rem",letterSpacing:"3px"}}>{player.name.toUpperCase()}'S PICKS</h1>
-          <div className="text-sm text-[#555] mt-1">Picks lock when the commissioner opens qualifying. You can't change picks after that.</div>
+          <div className="text-sm text-[#555] mt-1">Picks auto-lock when qualifying starts. Picks may not be entered after that time.</div>
         </div>
 
         <Card className="mb-4">
