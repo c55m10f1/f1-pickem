@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react'
 import Layout from '../components/Layout'
 import { Card } from '../components/ui'
@@ -11,6 +10,8 @@ export default function Results({ session, player, loading }) {
   const [players, setPlayers] = useState([])
   const [raceId, setRaceId] = useState(RACES[0].id)
   const [ready, setReady] = useState(false)
+  const [commentary, setCommentary] = useState(null)
+  const [commentaryLoading, setCommentaryLoading] = useState(false)
 
   useEffect(() => { loadAll() }, [])
 
@@ -26,6 +27,44 @@ export default function Results({ session, player, loading }) {
     const last = [...RACES].reverse().find(r => (rs || []).find(res => res.race_id === r.id))
     if (last) setRaceId(last.id)
     setReady(true)
+  }
+
+  useEffect(() => {
+    if (!ready) return
+    const result = results.find(r => r.race_id === raceId)
+    if (!result) { setCommentary(null); return }
+    loadCommentary(raceId)
+  }, [raceId, ready])
+
+  async function loadCommentary(rid) {
+    setCommentary(null)
+    setCommentaryLoading(true)
+    // First check cache
+    const { data: cached } = await supabase
+      .from('race_commentary')
+      .select('commentary')
+      .eq('race_id', rid)
+      .maybeSingle()
+
+    if (cached) {
+      setCommentary(cached.commentary)
+      setCommentaryLoading(false)
+      return
+    }
+
+    // Generate new
+    try {
+      const res = await fetch('/api/generate-commentary', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ race_id: rid })
+      })
+      const data = await res.json()
+      setCommentary(data.commentary || null)
+    } catch (e) {
+      setCommentary(null)
+    }
+    setCommentaryLoading(false)
   }
 
   const race = RACES.find(r => r.id === raceId)
@@ -137,6 +176,55 @@ export default function Results({ session, player, loading }) {
             })}
           </div>
         </Card>
+
+        {/* Robo Brundle Commentary */}
+        {result && (
+          <div className="mt-5">
+            <div style={{
+              background:'#0d0d14',
+              border:'1px solid #1e1e2c',
+              borderRadius:'12px',
+              overflow:'hidden'
+            }}>
+              <div style={{
+                background:'#111118',
+                borderBottom:'1px solid #1e1e2c',
+                padding:'12px 16px',
+                display:'flex',
+                alignItems:'center',
+                gap:'10px'
+              }}>
+                <div style={{
+                  background:'#E8002D',
+                  borderRadius:'50%',
+                  width:'32px',height:'32px',
+                  display:'flex',alignItems:'center',justifyContent:'center',
+                  fontFamily:"'Bebas Neue',sans-serif",fontSize:'0.9rem',color:'#fff',
+                  flexShrink:0
+                }}>RB</div>
+                <div>
+                  <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:'1rem',letterSpacing:'2px'}}>ROBO BRUNDLE</div>
+                  <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:'0.55rem',color:'#444'}}>POST-RACE GRID WALK</div>
+                </div>
+              </div>
+              <div style={{padding:'16px'}}>
+                {commentaryLoading ? (
+                  <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:'0.75rem',color:'#E8002D',letterSpacing:'2px'}}>
+                    ROBO BRUNDLE IS SHARPENING HIS CLAWS…
+                  </div>
+                ) : commentary ? (
+                  <p style={{fontFamily:"Georgia,serif",fontSize:'0.9rem',lineHeight:'1.7',color:'#ccc',margin:0}}>
+                    {commentary}
+                  </p>
+                ) : (
+                  <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:'0.75rem',color:'#333'}}>
+                    No commentary available.
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </Layout>
   )
