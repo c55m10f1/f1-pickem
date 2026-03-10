@@ -102,7 +102,7 @@ ${prevCommentary}` : ''}
 Write a Brundle-style post-race commentary of 150-200 words. Go player by player. Be specific about their picks. Reference season context and past patterns where relevant. End with a one-liner overall verdict on the race. No headers, just flowing prose with personality.`
 
   const message = await anthropic.messages.create({
-    model: 'claude-sonnet-4-20250514',
+    model: 'claude-sonnet-4-5',
     max_tokens: 500,
     messages: [{ role: 'user', content: prompt }]
   })
