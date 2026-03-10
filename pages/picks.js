@@ -10,6 +10,8 @@ export default function Picks({ session, player, loading }) {
   const [raceId, setRaceId] = useState(RACES[0].id)
   const [p1, setP1] = useState(''); const [p2, setP2] = useState(''); const [p3, setP3] = useState('')
   const [myPicks, setMyPicks] = useState([])
+  const [allPicks, setAllPicks] = useState([])
+  const [allPlayers, setAllPlayers] = useState([])
   const [results, setResults] = useState([])
   const [locks, setLocks] = useState([])
   const [saving, setSaving] = useState(false)
@@ -23,14 +25,18 @@ export default function Picks({ session, player, loading }) {
   useEffect(() => { if (player) loadData() }, [player])
 
   async function loadData() {
-    const [{ data: pks }, { data: rs }, { data: lks }] = await Promise.all([
+    const [{ data: pks }, { data: rs }, { data: lks }, { data: apks }, { data: ps }] = await Promise.all([
       supabase.from('picks').select('*').eq('player_id', player.id),
       supabase.from('race_results').select('*'),
       supabase.from('race_locks').select('*'),
+      supabase.from('picks').select('*'),
+      supabase.from('players').select('*'),
     ])
     setMyPicks(pks || [])
     setResults(rs || [])
     setLocks(lks || [])
+    setAllPicks(apks || [])
+    setAllPlayers(ps || [])
   }
 
   // Set default race to next open race
@@ -242,6 +248,78 @@ export default function Picks({ session, player, loading }) {
                     fontSize:'0.65rem',fontFamily:"'JetBrains Mono',monospace",cursor:'pointer'}}>
                   ↺ check again (live)
                 </button>
+              </div>
+            )}
+          </Card>
+        )}
+
+        {/* Everyone's Picks — visible after lock */}
+        {(isLocked || hasResult) && (
+          <Card className="mb-4">
+            <div className="flex justify-between items-center mb-4">
+              <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:"0.8rem",letterSpacing:"2px",color:"#333"}}>
+                EVERYONE'S PICKS
+              </div>
+              <div style={{fontSize:"0.6rem",color:"#2a2a3a",letterSpacing:"1px",fontFamily:"'JetBrains Mono',monospace"}}>
+                {hasResult ? '✓ scored' : '🔒 locked'}
+              </div>
+            </div>
+            <div className="flex flex-col gap-3">
+              {allPlayers.sort((a,b) => a.name.localeCompare(b.name)).map(p => {
+                const pk = allPicks.find(pk => pk.player_id === p.id && pk.race_id === raceId)
+                const isMe = p.id === player.id
+                const result = results.find(r => r.race_id === raceId)
+                // Score each pick position if result exists
+                const score = (driver, pos) => {
+                  if (!result || !pk || pk.dns) return null
+                  const podium = [result.p1, result.p2, result.p3]
+                  if (!podium.includes(driver)) return 'miss'
+                  if (result[`p${pos}`] === driver) return 'exact'
+                  return 'hit'
+                }
+                return (
+                  <div key={p.id} style={{
+                    borderLeft: isMe ? '2px solid #E8002D' : '2px solid #1e1e2c',
+                    paddingLeft: '10px'
+                  }}>
+                    <div className="flex items-center gap-2 mb-1">
+                      <div style={{
+                        fontFamily:"'Bebas Neue',sans-serif",fontSize:"0.85rem",letterSpacing:"2px",
+                        color: isMe ? '#E8002D' : '#888'
+                      }}>
+                        {p.name.toUpperCase()}
+                        {isMe && <span style={{fontSize:"0.55rem",marginLeft:"6px",color:"#444"}}>YOU</span>}
+                      </div>
+                      {pk?.is_autopick && (
+                        <span style={{fontSize:"0.55rem",color:"#FFD060",fontFamily:"'JetBrains Mono',monospace"}}>🎲 auto</span>
+                      )}
+                    </div>
+                    {!pk || pk.dns ? (
+                      <div style={{fontSize:"0.7rem",color:"#333",fontFamily:"'JetBrains Mono',monospace"}}>DNS</div>
+                    ) : (
+                      <div className="flex gap-3">
+                        {[['🥇', pk.p1, 1], ['🥈', pk.p2, 2], ['🥉', pk.p3, 3]].map(([medal, driver, pos]) => {
+                          const s = score(driver, pos)
+                          const col = s === 'exact' ? '#4ade80' : s === 'hit' ? '#60a5fa' : s === 'miss' ? '#333' : '#aaa'
+                          return (
+                            <div key={pos} className="flex items-center gap-1">
+                              <span style={{fontSize:'0.8rem'}}>{medal}</span>
+                              <span style={{
+                                fontFamily:"'JetBrains Mono',monospace",fontSize:"0.72rem",
+                                fontWeight:'600', color: col
+                              }}>{driver}</span>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+            {!hasResult && (
+              <div style={{marginTop:'14px',fontSize:'0.62rem',color:'#2a2a3a',fontFamily:"'JetBrains Mono',monospace"}}>
+                colour coding appears once results are entered
               </div>
             )}
           </Card>
