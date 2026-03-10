@@ -21,6 +21,7 @@ export default function Picks({ session, player, loading }) {
   const [aiSummary, setAiSummary] = useState(null)
   const [aiLoading, setAiLoading] = useState(false)
   const [aiError, setAiError] = useState(null)
+  const [aiCachedAt, setAiCachedAt] = useState(null)
 
   useEffect(() => { if (!loading && !session) router.push('/login') }, [loading, session])
   useEffect(() => { if (player) loadData() }, [player])
@@ -52,11 +53,24 @@ export default function Picks({ session, player, loading }) {
   const readonly = isLocked || hasResult
   const existing = myPicks.find(p => p.race_id === raceId)
 
-  // Reset AI odds when race changes
+  // Load cached odds on mount when race changes
   useEffect(() => {
     setAiOdds(null)
     setAiSummary(null)
     setAiError(null)
+    setAiCachedAt(null)
+    // Auto-load if cached
+    fetch('/api/race-odds', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ race_id: raceId, race_name: race?.name })
+    }).then(r => r.json()).then(data => {
+      if (data.odds && data.cached) {
+        setAiOdds(data.odds)
+        setAiSummary(data.summary)
+        setAiCachedAt(data.cached_at)
+      }
+    }).catch(() => {})
   }, [raceId])
 
   useEffect(() => {
@@ -82,19 +96,20 @@ export default function Picks({ session, player, loading }) {
 
   const avail = (ex = []) => DRIVERS.filter(d => !ex.includes(d))
 
-  const fetchAiOdds = async () => {
+  const fetchAiOdds = async (force = false) => {
     setAiLoading(true)
     setAiError(null)
     try {
       const res = await fetch('/api/race-odds', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ race_id: raceId, race_name: race.name })
+        body: JSON.stringify({ race_id: raceId, race_name: race.name, force })
       })
       const data = await res.json()
       if (data.error) throw new Error(data.error)
       setAiOdds(data.odds)
       setAiSummary(data.summary)
+      setAiCachedAt(data.cached_at || new Date().toISOString())
     } catch (e) {
       setAiError('Could not load odds. Try again.')
     }
@@ -250,11 +265,18 @@ export default function Picks({ session, player, loading }) {
                     </div>
                   ))}
                 </div>
-                <button onClick={fetchAiOdds}
-                  style={{marginTop:'12px',background:'none',border:'none',color:'#555',
-                    fontSize:'0.65rem',fontFamily:"'JetBrains Mono',monospace",cursor:'pointer'}}>
-                  ↺ check again (live)
-                </button>
+                <div className="flex items-center justify-between" style={{marginTop:'12px'}}>
+                  {aiCachedAt && (
+                    <div style={{fontSize:'0.58rem',color:'#2a2a3a',fontFamily:"'JetBrains Mono',monospace"}}>
+                      updated {new Date(aiCachedAt).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})}
+                    </div>
+                  )}
+                  <button onClick={() => fetchAiOdds(true)}
+                    style={{marginLeft:'auto',background:'none',border:'none',color:'#555',
+                      fontSize:'0.65rem',fontFamily:"'JetBrains Mono',monospace",cursor:'pointer'}}>
+                    ↺ refresh now
+                  </button>
+                </div>
               </div>
             )}
           </Card>
