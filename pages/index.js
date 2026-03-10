@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import Layout from '../components/Layout'
+import RaceCountdown from '../components/RaceCountdown'
 import { Card } from '../components/ui'
 import { supabase } from '../lib/supabase'
 import { RACES, calcScore } from '../lib/data'
@@ -63,6 +64,12 @@ export default function Home({ session, player, loading }) {
             2026 · {scored}/24 RACES{lastRace ? ` · LAST: ${lastRace.name.toUpperCase()}` : ''}
           </div>
         </div>
+
+        {/* Race countdown — shows 5 days before race */}
+        {(() => {
+          const nextRace = RACES.find(r => new Date(r.raceStart) > new Date())
+          return nextRace ? <RaceCountdown race={nextRace} /> : null
+        })()}
 
         <div className="flex flex-col gap-3 mb-8">
           {sorted.map((p, i) => {
