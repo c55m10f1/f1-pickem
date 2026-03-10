@@ -53,24 +53,12 @@ export default function Picks({ session, player, loading }) {
   const readonly = isLocked || hasResult
   const existing = myPicks.find(p => p.race_id === raceId)
 
-  // Load cached odds on mount when race changes
+  // Reset odds when race changes — user must click to fetch
   useEffect(() => {
     setAiOdds(null)
     setAiSummary(null)
     setAiError(null)
     setAiCachedAt(null)
-    // Auto-load if cached
-    fetch('/api/race-odds', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ race_id: raceId, race_name: race?.name })
-    }).then(r => r.json()).then(data => {
-      if (data.odds && data.cached) {
-        setAiOdds(data.odds)
-        setAiSummary(data.summary)
-        setAiCachedAt(data.cached_at)
-      }
-    }).catch(() => {})
   }, [raceId])
 
   useEffect(() => {
@@ -97,13 +85,15 @@ export default function Picks({ session, player, loading }) {
   const avail = (ex = []) => DRIVERS.filter(d => !ex.includes(d))
 
   const fetchAiOdds = async (force = false) => {
+    const currentRace = RACES.find(r => r.id === raceId)
+    if (!currentRace) return
     setAiLoading(true)
     setAiError(null)
     try {
       const res = await fetch('/api/race-odds', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ race_id: raceId, race_name: race.name, force })
+        body: JSON.stringify({ race_id: raceId, race_name: currentRace.name, force })
       })
       const data = await res.json()
       if (data.error) throw new Error(data.error)
