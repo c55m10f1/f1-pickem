@@ -66,7 +66,26 @@ export default function Commissioner({ session, player, loading }) {
 
   const lockRace = async (raceId) => {
     await supabase.from('race_locks').upsert({ race_id: raceId, locked_at: new Date().toISOString() }, { onConflict: 'race_id' })
-    showToast(`🔒 ${RACES.find(r => r.id === raceId).name} locked!`)
+    // Trigger autopick for players who haven't picked
+    try {
+      const res = await fetch('/api/autopick', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ race_id: raceId })
+      })
+      const data = await res.json()
+      const raceName = RACES.find(r => r.id === raceId).name
+      if (data.autopicked?.length || data.dns?.length) {
+        const msgs = []
+        if (data.autopicked?.length) msgs.push(`🎲 Autopicked: ${data.autopicked.map(p => p.name).join(', ')}`)
+        if (data.dns?.length) msgs.push(`❌ DNS (no picks left): ${data.dns.join(', ')}`)
+        showToast(`🔒 ${raceName} locked! ${msgs.join(' · ')}`)
+      } else {
+        showToast(`🔒 ${raceName} locked! All players had picks.`)
+      }
+    } catch {
+      showToast(`🔒 ${RACES.find(r => r.id === raceId).name} locked!`)
+    }
     await loadAll()
   }
 
@@ -251,9 +270,15 @@ export default function Commissioner({ session, player, loading }) {
                   <div className="font-semibold">{p.name}</div>
                   <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:"0.62rem",color:"#444",marginTop:"2px"}}>{p.email}</div>
                 </div>
-                {p.is_commissioner && (
-                  <span className="text-[11px] font-mono text-[#E8002D] border border-[#E8002D33] rounded px-2 py-0.5">COMMISH</span>
-                )}
+                <div className="flex items-center gap-3">
+                  <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:"0.7rem",letterSpacing:"1px",
+                    color: (p.autopicks_used||0) >= 2 ? '#E8002D' : (p.autopicks_used||0) === 1 ? '#FFD060' : '#333'}}>
+                    🎲 {2 - (p.autopicks_used||0)}/2 LEFT
+                  </div>
+                  {p.is_commissioner && (
+                    <span className="text-[11px] font-mono text-[#E8002D] border border-[#E8002D33] rounded px-2 py-0.5">COMMISH</span>
+                  )}
+                </div>
               </div>
             ))}
           </Card>
