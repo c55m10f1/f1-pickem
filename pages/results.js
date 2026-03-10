@@ -177,7 +177,7 @@ export default function Results({ session, player, loading }) {
           </div>
         </Card>
 
-        {/* Robo Brundle Commentary */}
+        {/* Brundle Bot Commentary */}
         {result && (
           <div className="mt-5">
             <div style={{
@@ -201,16 +201,16 @@ export default function Results({ session, player, loading }) {
                   display:'flex',alignItems:'center',justifyContent:'center',
                   fontFamily:"'Bebas Neue',sans-serif",fontSize:'0.9rem',color:'#fff',
                   flexShrink:0
-                }}>RB</div>
+                }}>BB</div>
                 <div>
-                  <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:'1rem',letterSpacing:'2px'}}>ROBO BRUNDLE</div>
+                  <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:'1rem',letterSpacing:'2px'}}>BRUNDLE BOT</div>
                   <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:'0.55rem',color:'#444'}}>POST-RACE GRID WALK</div>
                 </div>
               </div>
               <div style={{padding:'16px'}}>
                 {commentaryLoading ? (
                   <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:'0.75rem',color:'#E8002D',letterSpacing:'2px'}}>
-                    ROBO BRUNDLE IS SHARPENING HIS CLAWS…
+                    BRUNDLE BOT IS SHARPENING HIS CLAWS…
                   </div>
                 ) : commentary ? (
                   <p style={{fontFamily:"Georgia,serif",fontSize:'0.9rem',lineHeight:'1.7',color:'#ccc',margin:0}}>
