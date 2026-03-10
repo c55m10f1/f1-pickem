@@ -1,22 +1,19 @@
 import Link from 'next/link'
 import { useRouter } from 'next/router'
 import { supabase } from '../lib/supabase'
-
 export default function Layout({ children, player, session }) {
   const router = useRouter()
-
   const signOut = async () => {
     await supabase.auth.signOut()
     router.push('/login')
   }
-
   const navLinks = [
-    { href: '/',           label: '🏆 Board'   },
+    { href: '/',           label: '🏆 Board'    },
     { href: '/picks',      label: '📝 My Picks' },
     { href: '/results',    label: '📊 Results'  },
+    { href: '/schedule',   label: '📅 Schedule' },
     ...(player?.is_commissioner ? [{ href: '/commissioner', label: '⚙ Commish' }] : []),
   ]
-
   return (
     <div className="min-h-screen bg-[#0d0d12] text-[#eef0f5]">
       {/* Header */}
@@ -48,7 +45,6 @@ export default function Layout({ children, player, session }) {
             )}
           </div>
         </div>
-
         {/* Tab nav */}
         <div className="max-w-3xl mx-auto px-2 flex overflow-x-auto">
           {navLinks.map(({ href, label }) => (
@@ -63,7 +59,6 @@ export default function Layout({ children, player, session }) {
           ))}
         </div>
       </header>
-
       {/* Page content */}
       <main className="max-w-3xl mx-auto px-4 py-6 pb-16">
         {children}
