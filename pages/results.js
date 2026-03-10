@@ -1,174 +1,252 @@
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/router'
 import Layout from '../components/Layout'
-import { Card } from '../components/ui'
+import { Card, Label, Btn, Toast, Badge } from '../components/ui'
 import { supabase } from '../lib/supabase'
-import { RACES, calcScore } from '../lib/data'
+import { RACES, DRIVERS, calcScore } from '../lib/data'
 
-export default function Results({ session, player, loading }) {
-  const [picks, setPicks] = useState([])
-  const [results, setResults] = useState([])
-  const [players, setPlayers] = useState([])
+export default function Picks({ session, player, loading }) {
+  const router = useRouter()
   const [raceId, setRaceId] = useState(RACES[0].id)
-  const [ready, setReady] = useState(false)
-  const [commentary, setCommentary] = useState(null)
-  const [commentaryLoading, setCommentaryLoading] = useState(false)
+  const [p1, setP1] = useState(''); const [p2, setP2] = useState(''); const [p3, setP3] = useState('')
+  const [myPicks, setMyPicks] = useState([])
+  const [results, setResults] = useState([])
+  const [locks, setLocks] = useState([])
+  const [saving, setSaving] = useState(false)
+  const [toast, setToast] = useState(null)
+  const [polyOdds, setPolyOdds] = useState(null)
+  const [polyUrl, setPolyUrl] = useState(null)
+  const [polyLoading, setPolyLoading] = useState(false)
 
-  useEffect(() => { loadAll() }, [])
+  useEffect(() => { if (!loading && !session) router.push('/login') }, [loading, session])
+  useEffect(() => { if (player) loadData() }, [player])
 
-  async function loadAll() {
-    const [{ data: ps }, { data: pks }, { data: rs }] = await Promise.all([
-      supabase.from('players').select('*'),
-      supabase.from('picks').select('*'),
+  async function loadData() {
+    const [{ data: pks }, { data: rs }, { data: lks }] = await Promise.all([
+      supabase.from('picks').select('*').eq('player_id', player.id),
       supabase.from('race_results').select('*'),
+      supabase.from('race_locks').select('*'),
     ])
-    setPlayers(ps || [])
-    setPicks(pks || [])
+    setMyPicks(pks || [])
     setResults(rs || [])
-    const last = [...RACES].reverse().find(r => (rs || []).find(res => res.race_id === r.id))
-    if (last) setRaceId(last.id)
-    setReady(true)
+    setLocks(lks || [])
   }
 
+  // Set default race to next open race
   useEffect(() => {
-    if (!ready) return
-    const result = results.find(r => r.race_id === raceId)
-    if (!result) { setCommentary(null); return }
-    loadCommentary(raceId)
-  }, [raceId, ready])
-
-  async function loadCommentary(rid) {
-    setCommentary(null)
-    setCommentaryLoading(true)
-    // First check cache
-    const { data: cached } = await supabase
-      .from('race_commentary')
-      .select('commentary')
-      .eq('race_id', rid)
-      .maybeSingle()
-
-    if (cached) {
-      setCommentary(cached.commentary)
-      setCommentaryLoading(false)
-      return
-    }
-
-    // Generate new
-    try {
-      const res = await fetch('/api/generate-commentary', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ race_id: rid })
-      })
-      const data = await res.json()
-      setCommentary(data.commentary || null)
-    } catch (e) {
-      setCommentary(null)
-    }
-    setCommentaryLoading(false)
-  }
+    const open = RACES.find(r => !locks.find(l => l.race_id === r.id) && !results.find(res => res.race_id === r.id))
+    if (open) setRaceId(open.id)
+  }, [locks, results])
 
   const race = RACES.find(r => r.id === raceId)
+  const isLocked = !!locks.find(l => l.race_id === raceId)
+  const hasResult = !!results.find(r => r.race_id === raceId)
+  const readonly = isLocked || hasResult
+  const existing = myPicks.find(p => p.race_id === raceId)
 
-  if (!ready) return (
-    <Layout session={session} player={player}>
-      <div style={{color:"#E8002D",fontFamily:"'Bebas Neue',sans-serif",fontSize:"1.4rem",letterSpacing:"4px",marginTop:"40px",textAlign:"center"}}>LOADING…</div>
-    </Layout>
+  useEffect(() => {
+    setPolyOdds(null)
+    setPolyUrl(null)
+    if (!hasResult) {
+      setPolyLoading(true)
+      fetch(`/api/polymarket?race_id=${raceId}`)
+        .then(r => r.json())
+        .then(data => {
+          setPolyOdds(data.odds || null)
+          setPolyUrl(data.marketUrl || null)
+        })
+        .catch(() => {})
+        .finally(() => setPolyLoading(false))
+    }
+  }, [raceId])
+
+  useEffect(() => {
+    if (existing && !existing.dns) { setP1(existing.p1 || ''); setP2(existing.p2 || ''); setP3(existing.p3 || '') }
+    else { setP1(''); setP2(''); setP3('') }
+  }, [raceId, myPicks])
+
+  const showToast = (msg, type = 'ok') => { setToast({ msg, type }); setTimeout(() => setToast(null), 3400) }
+
+  const save = async () => {
+    if (readonly) return showToast(hasResult ? 'Race already scored 🔒' : 'Qualifying has started — picks locked 🔒', 'err')
+    if (!p1 || !p2 || !p3) return showToast('Fill in all 3 picks', 'err')
+    if (new Set([p1, p2, p3]).size < 3) return showToast('Pick 3 different drivers', 'err')
+    setSaving(true)
+    const { error } = await supabase.from('picks').upsert({
+      player_id: player.id, race_id: raceId, p1, p2, p3, dns: false,
+      updated_at: new Date().toISOString()
+    }, { onConflict: 'player_id,race_id' })
+    if (error) showToast('Error saving picks', 'err')
+    else { showToast(`✅ Picks saved for ${race.name}!`); await loadData() }
+    setSaving(false)
+  }
+
+  const dns = async () => {
+    if (readonly) return showToast('Picks are locked', 'err')
+    setSaving(true)
+    await supabase.from('picks').upsert({
+      player_id: player.id, race_id: raceId, p1: null, p2: null, p3: null, dns: true,
+      updated_at: new Date().toISOString()
+    }, { onConflict: 'player_id,race_id' })
+    showToast(`Marked DNS for ${race.name}`)
+    await loadData()
+    setSaving(false)
+  }
+
+  const avail = (ex = []) => DRIVERS.filter(d => !ex.includes(d))
+
+  if (loading || !player) return (
+    <div className="min-h-screen bg-[#0d0d12] flex items-center justify-center">
+      <div style={{color:"#E8002D",fontFamily:"'Bebas Neue',sans-serif",fontSize:"1.4rem",letterSpacing:"4px"}}>LOADING…</div>
+    </div>
   )
-
-  const result = results.find(r => r.race_id === raceId) || null
 
   return (
     <Layout session={session} player={player}>
       <div className="fade-up">
         <div className="mb-5">
-          <h1 style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:"2rem",letterSpacing:"3px"}}>RACE RESULTS</h1>
+          <h1 style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:"2rem",letterSpacing:"3px"}}>{player.name.toUpperCase()}'S PICKS</h1>
+          <div className="text-sm text-[#555] mt-1">Picks lock when the commissioner opens qualifying. You can't change picks after that.</div>
         </div>
 
-        <select value={raceId} onChange={e => setRaceId(e.target.value)} className="mb-5">
-          {RACES.map(r => (
-            <option key={r.id} value={r.id}>{r.name} — {r.date}{results.find(res=>res.race_id===r.id)?' ✓':''}</option>
-          ))}
-        </select>
-
-        <Card className="!p-0 overflow-hidden">
-          <div className="bg-[#111118] px-4 py-3 border-b border-[#1e1e2c] flex justify-between items-center">
-            <div>
-              <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:"1.3rem",letterSpacing:"2px"}}>{race?.name}</div>
-              <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:"0.6rem",color:"#444"}}>{race?.date}</div>
-            </div>
-            <span className={`text-[11px] font-mono px-2.5 py-1 rounded border ${result ? 'bg-green-950 border-green-900 text-green-400' : 'bg-[#1a1a24] border-[#2e2e42] text-[#555]'}`}>
-              {result ? '✓ FINAL' : 'PENDING'}
-            </span>
+        <Card className="mb-4">
+          <div className="flex justify-between items-center mb-3">
+            <Label>RACE</Label>
+            <Badge locked={readonly} />
           </div>
+          <select value={raceId} onChange={e => setRaceId(e.target.value)} className="mb-3">
+            {RACES.map(r => {
+              const lk = !!locks.find(l => l.race_id === r.id)
+              const res = !!results.find(res => res.race_id === r.id)
+              return <option key={r.id} value={r.id}>{r.name} — {r.date}{lk ? ' 🔒' : ''}{res ? ' ✓' : ''}</option>
+            })}
+          </select>
 
-          {result && (
-            <div className="bg-[#0d0d14] px-4 py-2.5 border-b border-[#1e1e2c] flex gap-4 font-mono text-sm">
-              {[['P1', result.p1, '#FFD060'], ['P2', result.p2, '#C0C8D8'], ['P3', result.p3, '#CD8B5A']].map(([pos, drv, col]) => (
-                <span key={pos}>
-                  <span className="text-[#333]">{pos} </span>
-                  <span style={{color: col, fontWeight: 700}}>{drv}</span>
-                </span>
-              ))}
+          {existing?.dns && !readonly && (
+            <div className="bg-red-950 border border-red-900 rounded-lg px-3 py-2 mb-3 text-sm text-red-300">
+              Currently DNS — save new picks to override.
             </div>
           )}
 
-          <div className="grid px-4 py-2 border-b border-[#1e1e2c]"
-            style={{gridTemplateColumns:'90px 1fr 36px 36px 36px 46px 46px',gap:'4px'}}>
-            <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:"0.55rem",color:"#333"}}>PLAYER</div>
-            <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:"0.55rem",color:"#333"}}>PICKS</div>
-            <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:"0.55rem",color:"#333",textAlign:'center'}}>P1</div>
-            <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:"0.55rem",color:"#333",textAlign:'center'}}>P2</div>
-            <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:"0.55rem",color:"#333",textAlign:'center'}}>P3</div>
-            <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:"0.55rem",color:"#333",textAlign:'center'}}>BONUS</div>
-            <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:"0.55rem",color:"#333",textAlign:'center'}}>TOTAL</div>
-          </div>
+          {readonly ? (
+            <div className="bg-[#111118] border border-[#1e1e2c] rounded-lg p-4">
+              <Label>YOUR SUBMISSION</Label>
+              {!existing ? (
+                <div className="text-[#444] text-sm">No pick submitted for this race.</div>
+              ) : existing.dns ? (
+                <div className="text-[#E8002D] font-mono">DNS — did not submit</div>
+              ) : (
+                <div className="flex gap-6 mt-1">
+                  {[['🥇', existing.p1], ['🥈', existing.p2], ['🥉', existing.p3]].map(([m, d]) => (
+                    <div key={m} className="text-center">
+                      <div className="text-2xl">{m}</div>
+                      <div className="font-bold mt-1">{d}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-3 gap-3 mb-4">
+                {[['🥇 1ST', p1, setP1, [p2, p3]], ['🥈 2ND', p2, setP2, [p1, p3]], ['🥉 3RD', p3, setP3, [p1, p2]]].map(([lbl, val, set, ex]) => (
+                  <div key={lbl}>
+                    <Label>{lbl}</Label>
+                    <select value={val} onChange={e => set(e.target.value)}>
+                      <option value="">—</option>
+                      {avail(ex).map(d => <option key={d}>{d}</option>)}
+                    </select>
+                  </div>
+                ))}
+              </div>
+              <div className="flex gap-2">
+                <Btn red full onClick={save} disabled={saving}>SAVE PICKS</Btn>
+                <Btn ghost onClick={dns} disabled={saving}>DNS</Btn>
+              </div>
+            </>
+          )}
+        </Card>
 
-          <div>
-            {players.map((p, i) => {
-              const pk = picks.find(pk => pk.player_id === p.id && pk.race_id === raceId)
-              const res = results.find(r => r.race_id === raceId) || null
-              const actual = res ? [res.p1, res.p2, res.p3] : []
-              const exactMatch = (d, j) => d === actual[j]
-              const wrongSpot = (d, j) => !exactMatch(d, j) && actual.includes(d)
-              const driverColor = (d, j) => actual.length === 0 ? '#4a4a5a' : exactMatch(d, j) ? '#2ECC71' : wrongSpot(d, j) ? '#7ec8f0' : '#4a4a5a'
-              const driverWeight = (d, j) => actual.length > 0 && (exactMatch(d, j) || wrongSpot(d, j)) ? 700 : 400
+        {/* Polymarket Odds Panel */}
+        {!hasResult && (
+          <Card className="mb-4">
+            <div className="flex justify-between items-center mb-3">
+              <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:"0.8rem",letterSpacing:"2px",color:"#333"}}>
+                RACE WINNER ODDS
+              </div>
+              {polyUrl ? (
+                <a href={polyUrl} target="_blank" rel="noopener noreferrer"
+                  style={{fontSize:"0.65rem",color:"#4e6bff",letterSpacing:"1px",textDecoration:"none",fontFamily:"'Bebas Neue',sans-serif"}}>
+                  POLYMARKET ↗
+                </a>
+              ) : (
+                <span style={{fontSize:"0.65rem",color:"#333",letterSpacing:"1px",fontFamily:"'Bebas Neue',sans-serif"}}>POLYMARKET</span>
+              )}
+            </div>
+
+            {polyLoading ? (
+              <div style={{color:"#333",fontSize:"0.75rem",fontFamily:"'JetBrains Mono',monospace"}}>Loading odds…</div>
+            ) : !polyOdds ? (
+              <div style={{color:"#2a2a3a",fontSize:"0.75rem",fontFamily:"'JetBrains Mono',monospace"}}>No market available yet for this race.</div>
+            ) : (
+              <div className="flex flex-col gap-2">
+                {polyOdds.map((driver, i) => (
+                  <div key={driver.name} className="flex items-center gap-2">
+                    <div style={{
+                      fontFamily:"'JetBrains Mono',monospace",
+                      fontSize:"0.7rem",
+                      color: i === 0 ? '#FFD060' : i === 1 ? '#aaa' : i === 2 ? '#cd7f32' : '#555',
+                      width: '80px',
+                      flexShrink: 0
+                    }}>
+                      {driver.name}
+                    </div>
+                    <div className="flex-1 relative" style={{height:'6px',background:'#111118',borderRadius:'3px'}}>
+                      <div style={{
+                        width: `${Math.round(driver.probability * 100)}%`,
+                        height: '100%',
+                        borderRadius: '3px',
+                        background: i === 0 ? '#E8002D' : i === 1 ? '#4e6bff' : '#2a2a4a',
+                        transition: 'width 0.5s ease'
+                      }} />
+                    </div>
+                    <div style={{
+                      fontFamily:"'Bebas Neue',sans-serif",
+                      fontSize:"0.85rem",
+                      color: i === 0 ? '#FFD060' : '#555',
+                      width:'36px',
+                      textAlign:'right',
+                      flexShrink:0
+                    }}>
+                      {Math.round(driver.probability * 100)}%
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </Card>
+        )}
+
+        {/* Season history */}
+        <Card>
+          <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:"0.8rem",letterSpacing:"2px",color:"#333",marginBottom:"14px"}}>SEASON HISTORY</div>
+          <div className="flex flex-col">
+            {RACES.map(r => {
+              const pk = myPicks.find(p => p.race_id === r.id)
+              const res = results.find(res => res.race_id === r.id)
+              if (!pk && !res) return null
               const sc = pk && !pk.dns && res ? calcScore(pk, res) : null
-              const isPerfect = sc && sc.bonus === 5
-              const isAllRight = sc && sc.bonus === 3
-              const ptColor = (v) => v > 0 ? '#eef0f5' : '#2a2a3a'
-
               return (
-                <div key={p.id} className="grid px-4 py-3 items-center"
-                  style={{gridTemplateColumns:'90px 1fr 36px 36px 36px 46px 46px',
-                    gap:'4px', borderBottom: i < players.length - 1 ? '1px solid #0e0e16' : 'none',
-                    background: i % 2 === 0 ? 'transparent' : '#11111a'}}>
-
-                  <div className="font-semibold text-sm">{p.name}</div>
-
-                  <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:"0.68rem",display:"flex",gap:"3px",alignItems:"center",flexWrap:"wrap"}}>
-                    {!pk ? <span className="text-[#2a2a3a]">no pick</span>
-                      : pk.dns ? <span className="text-red-500">DNS</span>
-                      : <>
-                          {[pk.p1, pk.p2, pk.p3].map((d, j) => (
-                            <span key={j}>
-                              <span style={{color: driverColor(d,j), fontWeight: driverWeight(d,j)}}>{d}</span>
-                              {j < 2 && <span className="text-[#2a2a3a]"> / </span>}
-                            </span>
-                          ))}
-                          {isPerfect && <span style={{marginLeft:'5px'}}>🤯</span>}
-                          {isAllRight && <span style={{marginLeft:'5px'}}>🥂</span>}
-                        </>
-                    }
+                <div key={r.id} className="grid gap-2 items-center py-2 border-b border-[#111118] text-sm"
+                  style={{gridTemplateColumns:'90px 1fr 44px'}}>
+                  <div className="font-semibold" style={{color: res ? '#ccc' : '#555'}}>{r.name}</div>
+                  <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:"0.68rem",color:"#444"}}>
+                    {pk?.dns ? <span className="text-red-500">DNS</span>
+                      : pk ? `${pk.p1} / ${pk.p2} / ${pk.p3}`
+                      : <span className="text-[#2a2a3a]">—</span>}
                   </div>
-
-                  <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:"0.75rem",textAlign:'center',color:sc?ptColor(sc.p1):'#2a2a3a',fontWeight:sc&&sc.p1>0?700:400}}>{sc?sc.p1:'—'}</div>
-                  <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:"0.75rem",textAlign:'center',color:sc?ptColor(sc.p2):'#2a2a3a',fontWeight:sc&&sc.p2>0?700:400}}>{sc?sc.p2:'—'}</div>
-                  <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:"0.75rem",textAlign:'center',color:sc?ptColor(sc.p3):'#2a2a3a',fontWeight:sc&&sc.p3>0?700:400}}>{sc?sc.p3:'—'}</div>
-                  <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:"0.75rem",textAlign:'center',color:sc&&sc.bonus>0?'#FFD060':'#2a2a3a',fontWeight:sc&&sc.bonus>0?700:400}}>
-                    {sc&&sc.bonus>0?`+${sc.bonus}`:'—'}
-                  </div>
-                  <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:"1.2rem",textAlign:'center',
-                    color: sc ? (sc.total>=8?'#FFD060':sc.total>=5?'#5a9abf':sc.total>0?'#eef0f5':'#2a2a3a') : '#2a2a3a'}}>
+                  <div className="text-right" style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:"1rem",
+                    color: sc ? (sc.total >= 8 ? '#FFD060' : sc.total >= 5 ? '#5a9abf' : '#3a3a4a') : '#2a2a3a'}}>
                     {sc ? sc.total : '—'}
                   </div>
                 </div>
@@ -176,60 +254,8 @@ export default function Results({ session, player, loading }) {
             })}
           </div>
         </Card>
-
-        {/* Brundle Bot Commentary */}
-        {result && (
-          <div className="mt-5">
-            <div style={{
-              background:'#0d0d14',
-              border:'1px solid #1e1e2c',
-              borderRadius:'12px',
-              overflow:'hidden'
-            }}>
-              <div style={{
-                background:'#111118',
-                borderBottom:'1px solid #1e1e2c',
-                padding:'12px 16px',
-                display:'flex',
-                alignItems:'center',
-                gap:'10px'
-              }}>
-                <div style={{
-                  background:'#E8002D',
-                  borderRadius:'50%',
-                  width:'32px',height:'32px',
-                  display:'flex',alignItems:'center',justifyContent:'center',
-                  fontFamily:"'Bebas Neue',sans-serif",fontSize:'0.9rem',color:'#fff',
-                  flexShrink:0
-                }}>BB</div>
-                <div>
-                  <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:'1rem',letterSpacing:'2px'}}>BRUNDLE BOT</div>
-                  <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:'0.55rem',color:'#444'}}>POST-RACE GRID WALK</div>
-                </div>
-              </div>
-              <div style={{padding:'16px'}}>
-                {commentaryLoading ? (
-                  <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:'0.75rem',color:'#E8002D',letterSpacing:'2px'}}>
-                    BRUNDLE BOT IS SHARPENING HIS CLAWS…
-                  </div>
-                ) : commentary ? (
-                  <p style={{fontFamily:"Georgia,serif",fontSize:'0.9rem',lineHeight:'1.7',color:'#ccc',margin:0}}>
-                    {commentary}
-                  </p>
-                ) : (
-                  <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:'0.75rem',color:'#333'}}>
-                    No commentary available.
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
       </div>
+      <Toast toast={toast} />
     </Layout>
   )
-}
-
-export async function getServerSideProps() {
-  return { props: {} }
 }
