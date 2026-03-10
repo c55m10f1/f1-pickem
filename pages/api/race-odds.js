@@ -17,7 +17,7 @@ export default async function handler(req, res) {
   const { race_id, race_name, force } = req.body
   if (!race_id || !race_name) return res.status(400).json({ error: 'race_id and race_name required' })
 
-  // Check cache unless force refresh requested
+  // Check cache first unless force refresh
   if (!force) {
     try {
       const { data: cached } = await supabase
@@ -37,9 +37,8 @@ export default async function handler(req, res) {
           })
         }
       }
-    } catch (cacheErr) {
-      // Cache read failed — just proceed to generate fresh
-      console.warn('Cache read failed:', cacheErr.message)
+    } catch (e) {
+      console.warn('Cache read failed:', e.message)
     }
   }
 
@@ -50,11 +49,11 @@ export default async function handler(req, res) {
       tools: [{ type: 'web_search_20250305', name: 'web_search' }],
       messages: [{
         role: 'user',
-        content: `Search for current 2026 F1 ${race_name} race winner odds and recent qualifying/practice results. 
+        content: `Search for current 2026 F1 ${race_name} Grand Prix race winner odds and recent practice/qualifying results.
 
-Then respond with ONLY a JSON object in this exact format, no other text:
+You MUST respond with ONLY a valid JSON object. No preamble, no explanation, no markdown. Just the raw JSON:
 {
-  "summary": "2-3 sentence punchy insight about who to watch and why, based on current form and odds. Be specific about drivers and reasons.",
+  "summary": "2-3 sentence insight on who to watch and why based on current form and odds",
   "odds": [
     { "driver": "LastName", "probability": 0.35 },
     { "driver": "LastName", "probability": 0.22 },
@@ -66,18 +65,25 @@ Then respond with ONLY a JSON object in this exact format, no other text:
   ]
 }
 
-Only include drivers from this list: Norris, Piastri, Russell, Hamilton, Leclerc, Sainz, Verstappen, Alonso, Stroll, Hulkenberg, Gasly, Doohan, Antonelli, Hadjar, Lawson, Tsunoda, Albon, Colapinto, Bearman, Bortoleto, Magnussen, Ocon, Lindblad.
-Probabilities must sum to 1.0. Order by probability descending. Return ONLY the JSON, nothing else.`
+Only use drivers from: Norris, Piastri, Russell, Hamilton, Leclerc, Sainz, Verstappen, Alonso, Stroll, Hulkenberg, Gasly, Doohan, Antonelli, Hadjar, Lawson, Tsunoda, Albon, Colapinto, Bearman, Bortoleto, Magnussen, Ocon, Lindblad.
+Probabilities must sum to 1.0. Order by probability descending. Start your response with { and end with }`
       }]
     })
 
+    // Find the text block in the response
     const textBlock = message.content.find(b => b.type === 'text')
-    if (!textBlock) throw new Error('No text response from Claude')
+    if (!textBlock) throw new Error('No text in response')
 
-    const clean = textBlock.text.replace(/```json|```/g, '').trim()
-    const parsed = JSON.parse(clean)
+    // Extract JSON — find first { to last }
+    const raw = textBlock.text
+    const start = raw.indexOf('{')
+    const end = raw.lastIndexOf('}')
+    if (start === -1 || end === -1) throw new Error('No JSON found in response')
 
-    // Try to cache — but don't fail if table doesn't exist yet
+    const parsed = JSON.parse(raw.slice(start, end + 1))
+    if (!parsed.odds || !parsed.summary) throw new Error('Invalid response structure')
+
+    // Cache it
     try {
       await supabase.from('race_odds').upsert({
         race_id,
@@ -85,8 +91,8 @@ Probabilities must sum to 1.0. Order by probability descending. Return ONLY the 
         summary: parsed.summary,
         updated_at: new Date().toISOString()
       }, { onConflict: 'race_id' })
-    } catch (cacheWriteErr) {
-      console.warn('Cache write failed (table may not exist):', cacheWriteErr.message)
+    } catch (e) {
+      console.warn('Cache write failed:', e.message)
     }
 
     return res.status(200).json({
@@ -95,6 +101,7 @@ Probabilities must sum to 1.0. Order by probability descending. Return ONLY the 
       cached: false,
       cached_at: new Date().toISOString()
     })
+
   } catch (err) {
     console.error('Race odds error:', err.message)
     return res.status(500).json({ error: err.message })
