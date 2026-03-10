@@ -14,6 +14,9 @@ export default function Picks({ session, player, loading }) {
   const [locks, setLocks] = useState([])
   const [saving, setSaving] = useState(false)
   const [toast, setToast] = useState(null)
+  const [polyOdds, setPolyOdds] = useState(null)
+  const [polyUrl, setPolyUrl] = useState(null)
+  const [polyLoading, setPolyLoading] = useState(false)
 
   useEffect(() => { if (!loading && !session) router.push('/login') }, [loading, session])
   useEffect(() => { if (player) loadData() }, [player])
@@ -42,6 +45,22 @@ export default function Picks({ session, player, loading }) {
   const existing = myPicks.find(p => p.race_id === raceId)
 
   useEffect(() => {
+    setPolyOdds(null)
+    setPolyUrl(null)
+    if (!hasResult) {
+      setPolyLoading(true)
+      fetch(`/api/polymarket?race_id=${raceId}`)
+        .then(r => r.json())
+        .then(data => {
+          setPolyOdds(data.odds || null)
+          setPolyUrl(data.marketUrl || null)
+        })
+        .catch(() => {})
+        .finally(() => setPolyLoading(false))
+    }
+  }, [raceId])
+
+  useEffect(() => {
     if (existing && !existing.dns) { setP1(existing.p1 || ''); setP2(existing.p2 || ''); setP3(existing.p3 || '') }
     else { setP1(''); setP2(''); setP3('') }
   }, [raceId, myPicks])
@@ -59,18 +78,6 @@ export default function Picks({ session, player, loading }) {
     }, { onConflict: 'player_id,race_id' })
     if (error) showToast('Error saving picks', 'err')
     else { showToast(`✅ Picks saved for ${race.name}!`); await loadData() }
-    setSaving(false)
-  }
-
-  const dns = async () => {
-    if (readonly) return showToast('Picks are locked', 'err')
-    setSaving(true)
-    await supabase.from('picks').upsert({
-      player_id: player.id, race_id: raceId, p1: null, p2: null, p3: null, dns: true,
-      updated_at: new Date().toISOString()
-    }, { onConflict: 'player_id,race_id' })
-    showToast(`Marked DNS for ${race.name}`)
-    await loadData()
     setSaving(false)
   }
 
@@ -142,11 +149,73 @@ export default function Picks({ session, player, loading }) {
               </div>
               <div className="flex gap-2">
                 <Btn red full onClick={save} disabled={saving}>SAVE PICKS</Btn>
-                <Btn ghost onClick={dns} disabled={saving}>DNS</Btn>
+              </div>
+              <div className="text-xs mt-2" style={{color:'#333',fontFamily:"'JetBrains Mono',monospace"}}>
+                Miss the deadline? You get 2 random autopicks/season. After that, DNS = 0 pts.
               </div>
             </>
           )}
         </Card>
+
+        {/* Polymarket Odds Panel */}
+        {!hasResult && (
+          <Card className="mb-4">
+            <div className="flex justify-between items-center mb-3">
+              <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:"0.8rem",letterSpacing:"2px",color:"#333"}}>
+                RACE WINNER ODDS
+              </div>
+              {polyUrl ? (
+                <a href={polyUrl} target="_blank" rel="noopener noreferrer"
+                  style={{fontSize:"0.65rem",color:"#4e6bff",letterSpacing:"1px",textDecoration:"none",fontFamily:"'Bebas Neue',sans-serif"}}>
+                  POLYMARKET ↗
+                </a>
+              ) : (
+                <span style={{fontSize:"0.65rem",color:"#333",letterSpacing:"1px",fontFamily:"'Bebas Neue',sans-serif"}}>POLYMARKET</span>
+              )}
+            </div>
+
+            {polyLoading ? (
+              <div style={{color:"#333",fontSize:"0.75rem",fontFamily:"'JetBrains Mono',monospace"}}>Loading odds…</div>
+            ) : !polyOdds ? (
+              <div style={{color:"#2a2a3a",fontSize:"0.75rem",fontFamily:"'JetBrains Mono',monospace"}}>No market available yet for this race.</div>
+            ) : (
+              <div className="flex flex-col gap-2">
+                {polyOdds.map((driver, i) => (
+                  <div key={driver.name} className="flex items-center gap-2">
+                    <div style={{
+                      fontFamily:"'JetBrains Mono',monospace",
+                      fontSize:"0.7rem",
+                      color: i === 0 ? '#FFD060' : i === 1 ? '#aaa' : i === 2 ? '#cd7f32' : '#555',
+                      width: '80px',
+                      flexShrink: 0
+                    }}>
+                      {driver.name}
+                    </div>
+                    <div className="flex-1 relative" style={{height:'6px',background:'#111118',borderRadius:'3px'}}>
+                      <div style={{
+                        width: `${Math.round(driver.probability * 100)}%`,
+                        height: '100%',
+                        borderRadius: '3px',
+                        background: i === 0 ? '#E8002D' : i === 1 ? '#4e6bff' : '#2a2a4a',
+                        transition: 'width 0.5s ease'
+                      }} />
+                    </div>
+                    <div style={{
+                      fontFamily:"'Bebas Neue',sans-serif",
+                      fontSize:"0.85rem",
+                      color: i === 0 ? '#FFD060' : '#555',
+                      width:'36px',
+                      textAlign:'right',
+                      flexShrink:0
+                    }}>
+                      {Math.round(driver.probability * 100)}%
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </Card>
+        )}
 
         {/* Season history */}
         <Card>
