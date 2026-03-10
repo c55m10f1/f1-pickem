@@ -14,9 +14,10 @@ export default function Picks({ session, player, loading }) {
   const [locks, setLocks] = useState([])
   const [saving, setSaving] = useState(false)
   const [toast, setToast] = useState(null)
-  const [polyOdds, setPolyOdds] = useState(null)
-  const [polyUrl, setPolyUrl] = useState(null)
-  const [polyLoading, setPolyLoading] = useState(false)
+  const [aiOdds, setAiOdds] = useState(null)
+  const [aiSummary, setAiSummary] = useState(null)
+  const [aiLoading, setAiLoading] = useState(false)
+  const [aiError, setAiError] = useState(null)
 
   useEffect(() => { if (!loading && !session) router.push('/login') }, [loading, session])
   useEffect(() => { if (player) loadData() }, [player])
@@ -44,20 +45,11 @@ export default function Picks({ session, player, loading }) {
   const readonly = isLocked || hasResult
   const existing = myPicks.find(p => p.race_id === raceId)
 
+  // Reset AI odds when race changes
   useEffect(() => {
-    setPolyOdds(null)
-    setPolyUrl(null)
-    if (!hasResult) {
-      setPolyLoading(true)
-      fetch(`/api/polymarket?race_id=${raceId}`)
-        .then(r => r.json())
-        .then(data => {
-          setPolyOdds(data.odds || null)
-          setPolyUrl(data.marketUrl || null)
-        })
-        .catch(() => {})
-        .finally(() => setPolyLoading(false))
-    }
+    setAiOdds(null)
+    setAiSummary(null)
+    setAiError(null)
   }, [raceId])
 
   useEffect(() => {
@@ -82,6 +74,25 @@ export default function Picks({ session, player, loading }) {
   }
 
   const avail = (ex = []) => DRIVERS.filter(d => !ex.includes(d))
+
+  const fetchAiOdds = async () => {
+    setAiLoading(true)
+    setAiError(null)
+    try {
+      const res = await fetch('/api/race-odds', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ race_id: raceId, race_name: race.name })
+      })
+      const data = await res.json()
+      if (data.error) throw new Error(data.error)
+      setAiOdds(data.odds)
+      setAiSummary(data.summary)
+    } catch (e) {
+      setAiError('Could not load odds. Try again.')
+    }
+    setAiLoading(false)
+  }
 
   if (loading || !player) return (
     <div className="min-h-screen bg-[#0d0d12] flex items-center justify-center">
@@ -157,61 +168,80 @@ export default function Picks({ session, player, loading }) {
           )}
         </Card>
 
-        {/* Polymarket Odds Panel */}
+        {/* AI Odds Panel */}
         {!hasResult && (
           <Card className="mb-4">
             <div className="flex justify-between items-center mb-3">
               <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:"0.8rem",letterSpacing:"2px",color:"#333"}}>
-                RACE WINNER ODDS
+                AI RACE ODDS
               </div>
-              {polyUrl ? (
-                <a href={polyUrl} target="_blank" rel="noopener noreferrer"
-                  style={{fontSize:"0.65rem",color:"#4e6bff",letterSpacing:"1px",textDecoration:"none",fontFamily:"'Bebas Neue',sans-serif"}}>
-                  POLYMARKET ↗
-                </a>
-              ) : (
-                <span style={{fontSize:"0.65rem",color:"#333",letterSpacing:"1px",fontFamily:"'Bebas Neue',sans-serif"}}>POLYMARKET</span>
-              )}
+              <span style={{fontSize:"0.6rem",color:"#2a2a3a",letterSpacing:"1px",fontFamily:"'JetBrains Mono',monospace"}}>
+                powered by claude
+              </span>
             </div>
 
-            {polyLoading ? (
-              <div style={{color:"#333",fontSize:"0.75rem",fontFamily:"'JetBrains Mono',monospace"}}>Loading odds…</div>
-            ) : !polyOdds ? (
-              <div style={{color:"#2a2a3a",fontSize:"0.75rem",fontFamily:"'JetBrains Mono',monospace"}}>No market available yet for this race.</div>
-            ) : (
+            {!aiOdds && !aiLoading && (
               <div className="flex flex-col gap-2">
-                {polyOdds.map((driver, i) => (
-                  <div key={driver.name} className="flex items-center gap-2">
-                    <div style={{
-                      fontFamily:"'JetBrains Mono',monospace",
-                      fontSize:"0.7rem",
-                      color: i === 0 ? '#FFD060' : i === 1 ? '#aaa' : i === 2 ? '#cd7f32' : '#555',
-                      width: '80px',
-                      flexShrink: 0
-                    }}>
-                      {driver.name}
-                    </div>
-                    <div className="flex-1 relative" style={{height:'6px',background:'#111118',borderRadius:'3px'}}>
-                      <div style={{
-                        width: `${Math.round(driver.probability * 100)}%`,
-                        height: '100%',
-                        borderRadius: '3px',
-                        background: i === 0 ? '#E8002D' : i === 1 ? '#4e6bff' : '#2a2a4a',
-                        transition: 'width 0.5s ease'
-                      }} />
-                    </div>
-                    <div style={{
-                      fontFamily:"'Bebas Neue',sans-serif",
-                      fontSize:"0.85rem",
-                      color: i === 0 ? '#FFD060' : '#555',
-                      width:'36px',
-                      textAlign:'right',
-                      flexShrink:0
-                    }}>
-                      {Math.round(driver.probability * 100)}%
-                    </div>
+                <div style={{color:"#444",fontSize:"0.75rem",fontFamily:"'JetBrains Mono',monospace",marginBottom:"8px"}}>
+                  Get AI-powered win probabilities based on current form, qualifying, and betting lines.
+                </div>
+                <button onClick={fetchAiOdds}
+                  style={{
+                    background:'#1a0808',border:'1px solid #E8002D',color:'#E8002D',
+                    borderRadius:'6px',padding:'8px 16px',cursor:'pointer',
+                    fontFamily:"'Bebas Neue',sans-serif",fontSize:"0.85rem",letterSpacing:"2px",
+                    width:'100%'
+                  }}>
+                  🔍 CHECK ODDS
+                </button>
+                {aiError && <div style={{color:'#E8002D',fontSize:'0.7rem',fontFamily:"'JetBrains Mono',monospace"}}>{aiError}</div>}
+              </div>
+            )}
+
+            {aiLoading && (
+              <div style={{color:"#E8002D",fontSize:"0.75rem",fontFamily:"'JetBrains Mono',monospace",letterSpacing:"2px"}}>
+                ANALYSING THE GRID…
+              </div>
+            )}
+
+            {aiOdds && (
+              <div>
+                {aiSummary && (
+                  <div style={{
+                    fontFamily:"Georgia,serif",fontSize:"0.8rem",lineHeight:"1.6",
+                    color:"#888",marginBottom:"14px",
+                    borderLeft:"2px solid #E8002D",paddingLeft:"10px"
+                  }}>
+                    {aiSummary}
                   </div>
-                ))}
+                )}
+                <div className="flex flex-col gap-2">
+                  {aiOdds.map((d, i) => (
+                    <div key={d.driver} className="flex items-center gap-2">
+                      <div style={{
+                        fontFamily:"'JetBrains Mono',monospace",fontSize:"0.7rem",
+                        color: i === 0 ? '#FFD060' : i === 1 ? '#aaa' : i === 2 ? '#cd7f32' : '#555',
+                        width:'80px',flexShrink:0
+                      }}>{d.driver}</div>
+                      <div className="flex-1" style={{height:'6px',background:'#111118',borderRadius:'3px'}}>
+                        <div style={{
+                          width:`${Math.round(d.probability*100)}%`,height:'100%',borderRadius:'3px',
+                          background: i===0?'#E8002D':i===1?'#4e6bff':'#2a2a4a',
+                          transition:'width 0.5s ease'
+                        }}/>
+                      </div>
+                      <div style={{
+                        fontFamily:"'Bebas Neue',sans-serif",fontSize:"0.85rem",
+                        color:i===0?'#FFD060':'#555',width:'36px',textAlign:'right',flexShrink:0
+                      }}>{Math.round(d.probability*100)}%</div>
+                    </div>
+                  ))}
+                </div>
+                <button onClick={fetchAiOdds}
+                  style={{marginTop:'12px',background:'none',border:'none',color:'#555',
+                    fontSize:'0.65rem',fontFamily:"'JetBrains Mono',monospace",cursor:'pointer'}}>
+                  ↺ check again (live)
+                </button>
               </div>
             )}
           </Card>
