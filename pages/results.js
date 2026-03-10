@@ -91,7 +91,7 @@ export default function Results({ session, player, loading }) {
               const actual = res ? [res.p1, res.p2, res.p3] : []
               const exactMatch = (d, j) => d === actual[j]
               const wrongSpot = (d, j) => !exactMatch(d, j) && actual.includes(d)
-              const driverColor = (d, j) => actual.length === 0 ? '#4a4a5a' : exactMatch(d, j) ? '#2ECC71' : wrongSpot(d, j) ? '#7EC8F0' : '#4a4a5a'
+              const isExact = exactMatch(d, j); const isWrong = wrongSpot(d, j); const driverColor = (d, j) => actual.length === 0 ? '#4a4a5a' : isExact ? '#2ECC71' : isWrong ? '#7EC8F0' : '#4a4a5a'
               const driverWeight = (d, j) => actual.length > 0 && (exactMatch(d, j) || wrongSpot(d, j)) ? 700 : 400
               const sc = pk && !pk.dns && res ? calcScore(pk, res) : null
               const isPerfect = sc && sc.bonus === 5
