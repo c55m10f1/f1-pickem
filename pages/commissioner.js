@@ -15,6 +15,7 @@ export default function Commissioner({ session, player, loading }) {
   const [fetching, setFetching] = useState({})
   const [toast, setToast] = useState(null)
   const [section, setSection] = useState('results')
+  const [weekRace, setWeekRace] = useState(RACES[0].id)
   const [bulkText, setBulkText] = useState('')
   const [overridePlayer, setOverridePlayer] = useState('')
   const [overrideRace, setOverrideRace] = useState(RACES[0].id)
@@ -143,6 +144,12 @@ export default function Commissioner({ session, player, loading }) {
     await loadAll()
   }
 
+  // Auto-select next open race for This Week view
+  useEffect(() => {
+    const open = RACES.find(r => !locks.find(l => l.race_id === r.id) && !results[r.id])
+    if (open) setWeekRace(open.id)
+  }, [locks, results])
+
   const subBtn = (s, lbl) => (
     <button onClick={() => setSection(s)}
       className="flex-1 rounded-md py-2 text-[13px] font-semibold transition-all"
@@ -163,6 +170,7 @@ export default function Commissioner({ session, player, loading }) {
 
         <div className="flex bg-[#111118] border border-[#1e1e2c] rounded-lg p-1 mb-5 gap-1">
           {subBtn('results', '🏁 Results')}
+          {subBtn('week', '👀 This Week')}
           {subBtn('picks', '📝 Override')}
           {subBtn('players', '👤 Players')}
         </div>
@@ -213,6 +221,96 @@ export default function Commissioner({ session, player, loading }) {
             })}
           </div>
         )}
+
+        {/* THIS WEEK'S PICKS */}
+        {section === 'week' && (() => {
+          const race = RACES.find(r => r.id === weekRace)
+          const isLocked = !!locks.find(l => l.race_id === weekRace)
+          const hasResult = !!results[weekRace]
+          const submitted = players.map(p => {
+            const pk = picks.find(pk => pk.player_id === p.id && pk.race_id === weekRace)
+            return { player: p, pick: pk }
+          })
+          const doneCount = submitted.filter(s => s.pick && !s.pick.dns).length
+          const missing = submitted.filter(s => !s.pick || s.pick.dns)
+          return (
+            <div>
+              <Card className="mb-3">
+                <div className="flex justify-between items-center mb-3">
+                  <Label>SELECT RACE</Label>
+                  <div style={{fontSize:'0.65rem',fontFamily:"'JetBrains Mono',monospace",color: isLocked ? '#E8002D' : hasResult ? '#5a9abf' : '#4a7a4a'}}>
+                    {hasResult ? '✓ SCORED' : isLocked ? '🔒 LOCKED' : '⏳ OPEN'}
+                  </div>
+                </div>
+                <select value={weekRace} onChange={e => setWeekRace(e.target.value)}>
+                  {RACES.map(r => {
+                    const lk = !!locks.find(l => l.race_id === r.id)
+                    const res = !!results[r.id]
+                    return <option key={r.id} value={r.id}>{r.name} — {r.date}{lk ? ' 🔒' : ''}{res ? ' ✓' : ''}</option>
+                  })}
+                </select>
+              </Card>
+
+              {/* Summary bar */}
+              <Card className="mb-3">
+                <div className="flex justify-between items-center">
+                  <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:"1.4rem",letterSpacing:"2px"}}>
+                    {doneCount}/{players.length}
+                    <span style={{fontSize:"0.7rem",color:"#555",marginLeft:"8px",letterSpacing:"1px"}}>SUBMITTED</span>
+                  </div>
+                  {missing.length > 0 && !isLocked && (
+                    <div style={{fontSize:"0.7rem",color:"#E8002D",fontFamily:"'JetBrains Mono',monospace"}}>
+                      missing: {missing.map(s => s.player.name).join(', ')}
+                    </div>
+                  )}
+                  {missing.length === 0 && (
+                    <div style={{fontSize:"0.7rem",color:"#4a7a4a",fontFamily:"'JetBrains Mono',monospace"}}>✓ all in</div>
+                  )}
+                </div>
+              </Card>
+
+              {/* Per-player picks grid */}
+              <div className="flex flex-col gap-2">
+                {submitted.map(({ player: p, pick: pk }) => {
+                  const hasSubmitted = pk && !pk.dns
+                  return (
+                    <Card key={p.id} style={{borderColor: hasSubmitted ? '#1e2e1e' : '#2e1e1e'}}>
+                      <div className="flex items-center justify-between">
+                        <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:"1rem",letterSpacing:"2px",
+                          color: hasSubmitted ? '#eef0f5' : '#444'}}>
+                          {p.name.toUpperCase()}
+                        </div>
+                        {!hasSubmitted && (
+                          <div style={{fontSize:"0.65rem",color:"#E8002D",fontFamily:"'JetBrains Mono',monospace",
+                            background:'#1a0808',border:'1px solid #2e1010',borderRadius:'4px',padding:'2px 8px'}}>
+                            {pk?.dns ? 'DNS' : 'NOT SUBMITTED'}
+                          </div>
+                        )}
+                      </div>
+                      {hasSubmitted && (
+                        <div className="flex gap-4 mt-2">
+                          {[['🥇', pk.p1], ['🥈', pk.p2], ['🥉', pk.p3]].map(([medal, driver]) => (
+                            <div key={medal} className="flex items-center gap-1">
+                              <span style={{fontSize:'0.9rem'}}>{medal}</span>
+                              <span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:"0.75rem",
+                                color:'#ccc',fontWeight:'600'}}>
+                                {driver}
+                              </span>
+                            </div>
+                          ))}
+                          {pk.is_autopick && (
+                            <span style={{fontSize:"0.6rem",color:"#FFD060",fontFamily:"'JetBrains Mono',monospace",
+                              marginLeft:'auto',alignSelf:'center'}}>🎲 AUTO</span>
+                          )}
+                        </div>
+                      )}
+                    </Card>
+                  )
+                })}
+              </div>
+            </div>
+          )
+        })()}
 
         {/* OVERRIDE PICKS */}
         {section === 'picks' && (
