@@ -1,7 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { createClient } from '@supabase/supabase-js'
 
-export const config = { maxDuration: 60 }
+export const config = { maxDuration: 30 }
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 const supabase = createClient(
@@ -43,42 +43,29 @@ export default async function handler(req, res) {
   }
 
   try {
+    // No web search — use Claude's knowledge directly, much faster and no rate limit issues
     const message = await anthropic.messages.create({
       model: 'claude-sonnet-4-5',
-      max_tokens: 1024,
-      tools: [{ type: 'web_search_20250305', name: 'web_search' }],
+      max_tokens: 512,
       messages: [{
         role: 'user',
-        content: `Search for current 2026 F1 ${race_name} Grand Prix race winner odds and recent practice/qualifying results.
+        content: `You are an F1 analyst. Based on your knowledge of the 2026 F1 season so far, give win probabilities for the ${race_name} Grand Prix.
 
-You MUST respond with ONLY a valid JSON object. No preamble, no explanation, no markdown. Just the raw JSON:
-{
-  "summary": "2-3 sentence insight on who to watch and why based on current form and odds",
-  "odds": [
-    { "driver": "LastName", "probability": 0.35 },
-    { "driver": "LastName", "probability": 0.22 },
-    { "driver": "LastName", "probability": 0.15 },
-    { "driver": "LastName", "probability": 0.10 },
-    { "driver": "LastName", "probability": 0.08 },
-    { "driver": "LastName", "probability": 0.06 },
-    { "driver": "LastName", "probability": 0.04 }
-  ]
-}
+Respond with ONLY this JSON, nothing else, no markdown:
+{"summary":"2-3 sentence punchy insight on who to watch and why","odds":[{"driver":"LastName","probability":0.35},{"driver":"LastName","probability":0.22},{"driver":"LastName","probability":0.15},{"driver":"LastName","probability":0.10},{"driver":"LastName","probability":0.08},{"driver":"LastName","probability":0.06},{"driver":"LastName","probability":0.04}]}
 
 Only use drivers from: Norris, Piastri, Russell, Hamilton, Leclerc, Sainz, Verstappen, Alonso, Stroll, Hulkenberg, Gasly, Doohan, Antonelli, Hadjar, Lawson, Tsunoda, Albon, Colapinto, Bearman, Bortoleto, Magnussen, Ocon, Lindblad.
-Probabilities must sum to 1.0. Order by probability descending. Start your response with { and end with }`
+Probabilities must sum to 1.0. Order by probability descending. Respond with ONLY the JSON object starting with { and ending with }`
       }]
     })
 
-    // Find the text block in the response
     const textBlock = message.content.find(b => b.type === 'text')
     if (!textBlock) throw new Error('No text in response')
 
-    // Extract JSON — find first { to last }
-    const raw = textBlock.text
+    const raw = textBlock.text.trim()
     const start = raw.indexOf('{')
     const end = raw.lastIndexOf('}')
-    if (start === -1 || end === -1) throw new Error('No JSON found in response')
+    if (start === -1 || end === -1) throw new Error('No JSON in response')
 
     const parsed = JSON.parse(raw.slice(start, end + 1))
     if (!parsed.odds || !parsed.summary) throw new Error('Invalid response structure')
