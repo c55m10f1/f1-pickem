@@ -591,7 +591,3 @@ export default function Commissioner({ session, player, loading }) {
     </Layout>
   )
 }
-      <Toast toast={toast} />
-    </Layout>
-  )
-}
