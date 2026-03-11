@@ -203,7 +203,7 @@ export default function Picks({ session, player, loading }) {
                 <div style={{color:"#444",fontSize:"0.75rem",fontFamily:"'JetBrains Mono',monospace",marginBottom:"8px"}}>
                   Get AI-powered win probabilities based on current form, qualifying, and betting lines.
                 </div>
-                <button onClick={fetchAiOdds}
+                <button onClick={() => fetchAiOdds(false)}
                   style={{
                     background:'#1a0808',border:'1px solid #E8002D',color:'#E8002D',
                     borderRadius:'6px',padding:'8px 16px',cursor:'pointer',
