@@ -21,6 +21,12 @@ export default function Commissioner({ session, player, loading }) {
   const [overrideRace, setOverrideRace] = useState(RACES[0].id)
   const [op1, setOp1] = useState(''); const [op2, setOp2] = useState(''); const [op3, setOp3] = useState('')
 
+  // SMS state
+  const [smsPlayers, setSmsPlayers] = useState({})
+  const [smsSending, setSmsSending] = useState({})
+  const [smsMessage, setSmsMessage] = useState('')
+  const [smsType, setSmsType] = useState('24hr')
+
   useEffect(() => {
     if (!loading && (!session || (player && !player.is_commissioner))) router.push('/')
   }, [loading, session, player])
@@ -67,7 +73,6 @@ export default function Commissioner({ session, player, loading }) {
 
   const lockRace = async (raceId) => {
     await supabase.from('race_locks').upsert({ race_id: raceId, locked_at: new Date().toISOString() }, { onConflict: 'race_id' })
-    // Trigger autopick for players who haven't picked
     try {
       const res = await fetch('/api/autopick', {
         method: 'POST',
@@ -144,6 +149,59 @@ export default function Commissioner({ session, player, loading }) {
     await loadAll()
   }
 
+  // SMS functions
+  const toggleSmsPlayer = (id) => {
+    setSmsPlayers(prev => ({ ...prev, [id]: !prev[id] }))
+  }
+
+  const selectAllSms = () => {
+    const allSelected = players.every(p => smsPlayers[p.id])
+    const next = {}
+    players.forEach(p => { next[p.id] = !allSelected })
+    setSmsPlayers(next)
+  }
+
+  const sendSmsToPlayer = async (playerId) => {
+    const p = players.find(pl => pl.id === playerId)
+    if (!p?.phone) return showToast(`${p?.name || 'Player'} has no phone number`, 'err')
+    setSmsSending(prev => ({ ...prev, [playerId]: true }))
+    try {
+      const res = await fetch('/api/send-sms', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ player_id: playerId, message_type: smsType, custom_message: smsMessage || null })
+      })
+      const data = await res.json()
+      if (data.error) throw new Error(data.error)
+      showToast(`📱 Sent to ${p.name}!`)
+    } catch (e) {
+      showToast(`Failed: ${e.message}`, 'err')
+    }
+    setSmsSending(prev => ({ ...prev, [playerId]: false }))
+  }
+
+  const sendSmsToSelected = async () => {
+    const selected = players.filter(p => smsPlayers[p.id])
+    if (selected.length === 0) return showToast('Select at least one player', 'err')
+    let sentCount = 0, errCount = 0
+    for (const p of selected) {
+      if (!p.phone) { errCount++; continue }
+      setSmsSending(prev => ({ ...prev, [p.id]: true }))
+      try {
+        const res = await fetch('/api/send-sms', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ player_id: p.id, message_type: smsType, custom_message: smsMessage || null })
+        })
+        const data = await res.json()
+        if (data.error) throw new Error(data.error)
+        sentCount++
+      } catch { errCount++ }
+      setSmsSending(prev => ({ ...prev, [p.id]: false }))
+    }
+    showToast(errCount ? `📱 Sent ${sentCount}, failed ${errCount}` : `📱 Sent to ${sentCount} players!`)
+  }
+
   // Auto-select next open race for This Week view
   useEffect(() => {
     const open = RACES.find(r => !locks.find(l => l.race_id === r.id) && !results[r.id])
@@ -160,6 +218,9 @@ export default function Commissioner({ session, player, loading }) {
 
   if (loading || !player?.is_commissioner) return null
 
+  // Find next race for SMS context
+  const nextRace = RACES.find(r => !locks.find(l => l.race_id === r.id) && !results[r.id])
+
   return (
     <Layout session={session} player={player}>
       <div className="fade-up">
@@ -172,6 +233,7 @@ export default function Commissioner({ session, player, loading }) {
           {subBtn('results', '🏁 Results')}
           {subBtn('week', '👀 This Week')}
           {subBtn('picks', '📝 Override')}
+          {subBtn('sms', '📱 SMS')}
           {subBtn('players', '👤 Players')}
         </div>
 
@@ -357,6 +419,149 @@ export default function Commissioner({ session, player, loading }) {
           </div>
         )}
 
+        {/* SMS REMINDERS */}
+        {section === 'sms' && (
+          <div>
+            {/* Next race context */}
+            <Card className="mb-3">
+              <div className="flex justify-between items-center">
+                <div>
+                  <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:"0.82rem",letterSpacing:"2px",color:"#444",marginBottom:"4px"}}>NEXT RACE</div>
+                  <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:"1.4rem",letterSpacing:"2px"}}>
+                    {nextRace ? `${nextRace.flag} ${nextRace.name.toUpperCase()}` : 'NO UPCOMING RACE'}
+                  </div>
+                  {nextRace && (
+                    <div style={{fontSize:"0.65rem",color:"#555",fontFamily:"'JetBrains Mono',monospace",marginTop:"2px"}}>
+                      locks {new Date(nextRace.qualiLock).toLocaleString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZoneName: 'short' })}
+                    </div>
+                  )}
+                </div>
+                {nextRace && (() => {
+                  const hrs = Math.round((new Date(nextRace.qualiLock) - new Date()) / (1000 * 60 * 60))
+                  return (
+                    <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:"1.6rem",
+                      color: hrs <= 2 ? '#E8002D' : hrs <= 24 ? '#FFD060' : '#333'}}>
+                      {hrs}H
+                      <div style={{fontSize:"0.55rem",letterSpacing:"1px",color:"#555",fontFamily:"'JetBrains Mono',monospace"}}>UNTIL LOCK</div>
+                    </div>
+                  )
+                })()}
+              </div>
+            </Card>
+
+            {/* Message type selector */}
+            <Card className="mb-3">
+              <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:"0.82rem",letterSpacing:"2px",color:"#444",marginBottom:"10px"}}>MESSAGE TYPE</div>
+              <div className="flex bg-[#111118] border border-[#1e1e2c] rounded-lg p-1 mb-4 gap-1">
+                {[['24hr', '⏰ 24hr Reminder'], ['2hr', '🚨 2hr Urgent'], ['results', '🏁 Results'], ['custom', '✏️ Custom']].map(([val, lbl]) => (
+                  <button key={val} onClick={() => setSmsType(val)}
+                    className="flex-1 rounded-md py-2 text-[11px] font-semibold transition-all"
+                    style={{ background: smsType === val ? '#1e1e2c' : 'transparent', color: smsType === val ? '#eef0f5' : '#555', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
+                    {lbl}
+                  </button>
+                ))}
+              </div>
+
+              {/* Preview */}
+              <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:"0.62rem",color:"#2a2a3a",marginBottom:"6px"}}>PREVIEW</div>
+              <div style={{
+                background:'#111118',border:'1px solid #1e1e2c',borderRadius:'8px',padding:'12px',
+                fontSize:'0.82rem',color:'#888',lineHeight:'1.5'
+              }}>
+                {smsType === '24hr' && `🏎️ F1 Pick'em: Picks lock in 24 hours for the ${nextRace?.name || '___'} GP! Make your selections now at f1-pickem-six.vercel.app`}
+                {smsType === '2hr' && `🏎️ F1 Pick'em: Picks lock in 2 HOURS for the ${nextRace?.name || '___'} GP! Don't miss out — pick now at f1-pickem-six.vercel.app`}
+                {smsType === 'results' && `🏁 F1 Pick'em: The ${nextRace?.name || '___'} GP results are in! See who nailed it — check the leaderboard at f1-pickem-six.vercel.app`}
+                {smsType === 'custom' && (smsMessage || '(type your message below)')}
+              </div>
+
+              {smsType === 'custom' && (
+                <div className="mt-3">
+                  <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:"0.62rem",color:"#2a2a3a",marginBottom:"6px"}}>CUSTOM MESSAGE</div>
+                  <textarea value={smsMessage} onChange={e => setSmsMessage(e.target.value)} rows={3}
+                    placeholder="Type your custom message here..."
+                    style={{background:'#1a1a24',border:'1px solid #2e2e42',color:'#eef0f5',borderRadius:'6px',padding:'10px 12px',fontFamily:'inherit',fontSize:'0.85rem',width:'100%',outline:'none',resize:'vertical'}} />
+                </div>
+              )}
+            </Card>
+
+            {/* Player list with send buttons */}
+            <Card className="mb-3">
+              <div className="flex justify-between items-center mb-3">
+                <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:"0.82rem",letterSpacing:"2px",color:"#444"}}>SEND TO</div>
+                <button onClick={selectAllSms}
+                  style={{fontSize:"0.62rem",color:"#555",fontFamily:"'JetBrains Mono',monospace",
+                    background:'none',border:'none',cursor:'pointer'}}>
+                  {players.every(p => smsPlayers[p.id]) ? 'deselect all' : 'select all'}
+                </button>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                {players.map(p => {
+                  const hasPick = nextRace ? picks.find(pk => pk.player_id === p.id && pk.race_id === nextRace.id && !pk.dns) : false
+                  const hasPhone = !!p.phone
+                  const isSelected = !!smsPlayers[p.id]
+                  const isSending = !!smsSending[p.id]
+                  return (
+                    <div key={p.id} className="flex items-center justify-between py-2 px-3 rounded-lg"
+                      style={{background: isSelected ? '#1a1a24' : 'transparent', border: `1px solid ${isSelected ? '#2e2e42' : '#111118'}`, transition: 'all 0.15s'}}>
+                      <div className="flex items-center gap-3">
+                        <button onClick={() => toggleSmsPlayer(p.id)}
+                          style={{
+                            width:'20px',height:'20px',borderRadius:'4px',border:`1px solid ${isSelected ? '#E8002D' : '#2e2e42'}`,
+                            background: isSelected ? '#E8002D' : 'transparent',cursor:'pointer',
+                            display:'flex',alignItems:'center',justifyContent:'center',fontSize:'12px',color:'#fff',flexShrink:0
+                          }}>
+                          {isSelected ? '✓' : ''}
+                        </button>
+                        <div>
+                          <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:"0.95rem",letterSpacing:"2px",
+                            color: hasPhone ? '#eef0f5' : '#444'}}>
+                            {p.name.toUpperCase()}
+                          </div>
+                          <div style={{fontSize:"0.58rem",fontFamily:"'JetBrains Mono',monospace",color:"#333",marginTop:"1px"}}>
+                            {hasPhone ? `${p.phone.slice(0,3)}•••${p.phone.slice(-4)}` : 'no phone'}
+                            {nextRace && (hasPick
+                              ? <span style={{color:'#4a7a4a',marginLeft:'8px'}}>✓ picked</span>
+                              : <span style={{color:'#E8002D',marginLeft:'8px'}}>no pick</span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      <button onClick={() => sendSmsToPlayer(p.id)} disabled={!hasPhone || isSending}
+                        style={{
+                          background: hasPhone ? '#1a0808' : '#111118',
+                          border: `1px solid ${hasPhone ? '#E8002D' : '#1e1e2c'}`,
+                          color: hasPhone ? '#E8002D' : '#333',
+                          borderRadius:'6px',padding:'5px 12px',cursor: hasPhone ? 'pointer' : 'not-allowed',
+                          fontFamily:"'JetBrains Mono',monospace",fontSize:"0.65rem",letterSpacing:"1px",
+                          opacity: isSending ? 0.5 : 1
+                        }}>
+                        {isSending ? '...' : 'SEND'}
+                      </button>
+                    </div>
+                  )
+                })}
+              </div>
+
+              {/* Send to all selected button */}
+              <button onClick={sendSmsToSelected}
+                className="w-full mt-4 rounded-lg py-3 font-bold text-sm transition-colors"
+                style={{
+                  background:'#E8002D',color:'#fff',border:'none',cursor:'pointer',
+                  fontFamily:"'Bebas Neue',sans-serif",fontSize:"0.95rem",letterSpacing:"2px",
+                  opacity: Object.values(smsPlayers).some(v => v) ? 1 : 0.4
+                }}>
+                📱 SEND TO SELECTED ({players.filter(p => smsPlayers[p.id]).length})
+              </button>
+            </Card>
+
+            {/* Help text */}
+            <div style={{fontSize:"0.58rem",color:"#2a2a3a",fontFamily:"'JetBrains Mono',monospace",textAlign:"center",marginTop:"8px"}}>
+              automated reminders run at 24hr and 2hr before lock via cron
+            </div>
+          </div>
+        )}
+
         {/* PLAYERS */}
         {section === 'players' && (
           <Card>
@@ -382,6 +587,10 @@ export default function Commissioner({ session, player, loading }) {
           </Card>
         )}
       </div>
+      <Toast toast={toast} />
+    </Layout>
+  )
+}
       <Toast toast={toast} />
     </Layout>
   )
