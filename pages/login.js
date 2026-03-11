@@ -7,32 +7,15 @@ export default function Login() {
   const router = useRouter()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [name, setName] = useState('')
-  const [mode, setMode] = useState('login') // 'login' | 'signup'
   const [loading, setLoading] = useState(false)
   const [msg, setMsg] = useState(null)
   const [err, setErr] = useState(null)
 
   const handle = async () => {
     setLoading(true); setErr(null); setMsg(null)
-    if (mode === 'login') {
-      const { error } = await supabase.auth.signInWithPassword({ email, password })
-      if (error) setErr(error.message)
-      else router.push('/')
-    } else {
-      if (!name.trim()) { setErr('Enter your name'); setLoading(false); return }
-      const { data, error } = await supabase.auth.signUp({ email, password })
-      if (error) { setErr(error.message) }
-      else if (data.user) {
-        await fetch('/api/create-player', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userId: data.user.id, email, name: name.trim() })
-        })
-        setMsg('Account created! You can now sign in.')
-        setMode('login')
-      }
-    }
+    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    if (error) setErr(error.message)
+    else router.push('/')
     setLoading(false)
   }
 
@@ -57,24 +40,7 @@ export default function Login() {
         </div>
 
         <div className="bg-[#16161e] border border-[#1e1e2c] rounded-xl p-6">
-          {/* Toggle */}
-          <div className="flex bg-[#111118] border border-[#1e1e2c] rounded-lg p-1 mb-6 gap-1">
-            {[['login','Sign In'],['signup','Create Account']].map(([m,lbl])=>(
-              <button key={m} onClick={()=>{setMode(m);setErr(null);setMsg(null)}}
-                className="flex-1 rounded-md py-2 text-sm font-semibold transition-all"
-                style={{background:mode===m?'#1e1e2c':'transparent',color:mode===m?'#eef0f5':'#555',border:'none',cursor:'pointer',fontFamily:'inherit'}}>
-                {lbl}
-              </button>
-            ))}
-          </div>
-
           <div className="space-y-4">
-            {mode === 'signup' && (
-              <div>
-                <div style={{fontSize:"0.68rem",color:"#555",letterSpacing:"1px",marginBottom:"6px",fontFamily:"'JetBrains Mono',monospace"}}>YOUR NAME</div>
-                <input type="text" value={name} onChange={e=>setName(e.target.value)} placeholder="Name" />
-              </div>
-            )}
             <div>
               <div style={{fontSize:"0.68rem",color:"#555",letterSpacing:"1px",marginBottom:"6px",fontFamily:"'JetBrains Mono',monospace"}}>EMAIL</div>
               <input type="email" value={email} onChange={e=>setEmail(e.target.value)}
@@ -92,18 +58,13 @@ export default function Login() {
             <button onClick={handle} disabled={loading}
               className="w-full bg-[#E8002D] text-white rounded-lg py-3 font-bold text-sm hover:bg-red-700 transition-colors disabled:opacity-50 mt-2"
               style={{fontFamily:'inherit',cursor:'pointer',border:'none'}}>
-              {loading ? 'Loading…' : mode === 'login' ? 'SIGN IN' : 'CREATE ACCOUNT'}
+              {loading ? 'Loading…' : 'SIGN IN'}
             </button>
           </div>
 
-          {mode === 'login' && (
-            <div className="mt-4 text-center text-xs text-[#444]">
-              Don't have an account?{' '}
-              <button onClick={()=>setMode('signup')} className="text-[#7ec8f0] hover:underline" style={{background:'none',border:'none',cursor:'pointer',fontFamily:'inherit',fontSize:'inherit'}}>
-                Sign up
-              </button>
-            </div>
-          )}
+          <div className="mt-4 text-center" style={{fontSize:"0.62rem",color:"#333",fontFamily:"'JetBrains Mono',monospace",letterSpacing:"1px"}}>
+            registration for 2026 is closed
+          </div>
         </div>
 
         <div className="mt-6 text-center" style={{fontFamily:"'JetBrains Mono',monospace",fontSize:"0.58rem",color:"#2a2a3a",letterSpacing:"1px"}}>
