@@ -76,11 +76,12 @@ export default function Home({ session, player, loading }) {
             const d = getPlayerTotal(p.id)
             const top = i < 3
             return (
-              <div key={p.id} style={{
+              <div key={p.id} className="card-stagger card-hover" style={{
                 display:'grid',gridTemplateColumns:'46px 1fr auto',gap:'12px',alignItems:'center',
                 background: top ? podiumBgs[i] : '#13131b',
                 border: `1px solid ${top ? podiumColors[i] + '44' : '#1e1e2c'}`,
-                borderRadius:'10px',padding:'14px 18px'
+                borderRadius:'10px',padding:'14px 18px',
+                animationDelay: `${i * 80}ms`,
               }}>
                 <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:top?'2rem':'1.1rem',
                   color:top?podiumColors[i]:'#2e2e42',lineHeight:1,textAlign:'center'}}>
