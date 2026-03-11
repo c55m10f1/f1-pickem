@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
 
-// Simplified track outline paths for each circuit
 const TRACK_PATHS = {
   'australia':    'M50,20 L80,20 Q90,20 90,30 L90,50 Q90,60 80,65 L70,70 Q60,75 55,85 L50,90 Q45,95 35,90 L25,80 Q15,75 15,65 L15,40 Q15,30 25,25 Z',
   'china':        'M20,15 L75,15 Q85,15 85,25 L85,40 L75,45 L75,65 Q75,75 65,75 L55,75 L50,85 Q45,90 35,85 L20,75 Q15,70 15,60 L15,25 Q15,15 20,15 Z',
@@ -23,15 +22,12 @@ const TRACK_PATHS = {
   'brazil':       'M27,20 L68,17 Q78,17 80,26 L82,47 Q82,57 74,62 L65,65 L63,75 Q60,83 50,84 L35,83 Q25,81 22,73 L18,52 Q16,40 19,28 Z',
   'qatar':        'M25,21 L69,18 Q79,18 81,27 L83,48 Q83,58 75,63 L66,66 L64,76 Q61,84 51,85 L36,84 Q26,82 23,74 L19,53 Q17,41 20,29 Z',
   'abu-dhabi':    'M23,21 L70,18 Q80,18 82,27 L84,49 Q84,59 76,64 L67,67 L65,77 Q62,85 52,86 L37,85 Q27,83 24,75 L20,54 Q18,42 21,30 Z',
-}
-
-function getTrackPath(country) {
-  return TRACK_PATHS[country] || TRACK_PATHS['australia']
+  'madrid':       'M24,20 L70,17 Q80,17 82,26 L84,47 Q84,57 76,62 L67,65 L65,75 Q62,83 52,84 L37,83 Q27,81 24,73 L20,52 Q18,40 21,28 Z',
+  'las-vegas':    'M20,25 L75,20 Q85,20 85,30 L85,55 Q85,65 75,68 L60,70 L55,80 Q50,88 40,85 L25,78 Q15,72 15,62 L15,35 Q15,25 20,25 Z',
 }
 
 function useCountdown(targetDate) {
   const [timeLeft, setTimeLeft] = useState(null)
-
   useEffect(() => {
     const calc = () => {
       const diff = new Date(targetDate) - new Date()
@@ -48,48 +44,204 @@ function useCountdown(targetDate) {
     const interval = setInterval(calc, 1000)
     return () => clearInterval(interval)
   }, [targetDate])
-
   return timeLeft
 }
 
-export default function RaceCountdown({ race }) {
-  const countdown = useCountdown(race.raceStart)
-  const qualiCountdown = useCountdown(race.qualiLock)
-
+// QUALI mode — shown on My Picks page, counts down to picks lock
+function QualiCountdown({ race }) {
+  const countdown = useCountdown(race.qualiLock)
   if (!countdown) return null
 
-  // Only show within 5 days of race start
+  // Show within 5 days of quali lock
+  const msUntilQuali = new Date(race.qualiLock) - new Date()
+  if (msUntilQuali > 5 * 24 * 60 * 60 * 1000 || countdown.done) return null
+
+  const isUrgent = msUntilQuali < 3 * 60 * 60 * 1000
+  const accentColor = isUrgent ? '#E8002D' : '#FFB800'
+  const trackPath = TRACK_PATHS[race.country] || TRACK_PATHS['australia']
+
+  return (
+    <div style={{
+      background: 'linear-gradient(135deg, #0d0d12 0%, #0d0d0a 50%, #0d0d12 100%)',
+      border: `1px solid ${isUrgent ? '#E8002D' : '#2a2200'}`,
+      borderRadius: '12px',
+      marginBottom: '20px',
+      overflow: 'hidden',
+      position: 'relative',
+      boxShadow: isUrgent ? '0 0 30px rgba(232,0,45,0.15)' : '0 4px 24px rgba(0,0,0,0.4)',
+    }}>
+      {/* Amber top accent bar */}
+      <div style={{
+        height: '3px',
+        background: isUrgent
+          ? 'linear-gradient(90deg, #E8002D, #ff6b6b, #E8002D)'
+          : 'linear-gradient(90deg, #FFB800, #7a5500)',
+        animation: isUrgent ? 'pulse-bar 1.5s ease-in-out infinite' : 'none',
+        backgroundSize: isUrgent ? '200% 100%' : '100% 100%',
+      }} />
+
+      <div style={{padding: '18px 20px'}}>
+        <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:'16px'}}>
+          <div>
+            <div style={{
+              fontFamily:"'JetBrains Mono',monospace",
+              fontSize:'0.6rem',
+              letterSpacing:'3px',
+              color: accentColor,
+              marginBottom:'4px'
+            }}>
+              {isUrgent ? '🚨 PICKS LOCK SOON' : '🔒 PICKS DEADLINE'}
+            </div>
+            <div style={{
+              fontFamily:"'Bebas Neue',sans-serif",
+              fontSize:'1.8rem',
+              letterSpacing:'3px',
+              lineHeight:1,
+              color:'#eef0f5',
+            }}>
+              {race.flag} {race.name.toUpperCase()}
+            </div>
+            <div style={{
+              fontFamily:"'JetBrains Mono',monospace",
+              fontSize:'0.62rem',
+              color:'#444',
+              marginTop:'4px',
+              letterSpacing:'1px'
+            }}>
+              LOCKS {new Date(race.qualiLock).toLocaleString('en-US', {
+                month:'short', day:'numeric',
+                hour:'numeric', minute:'2-digit',
+                timeZoneName:'short'
+              })}
+            </div>
+          </div>
+
+          {/* Track outline — amber tint */}
+          <div style={{opacity:0.2, flexShrink:0}}>
+            <svg width="80" height="80" viewBox="0 0 100 100" fill="none">
+              <path d={trackPath} stroke={accentColor} strokeWidth="4"
+                strokeLinecap="round" strokeLinejoin="round" fill="none" />
+              <circle cx="50" cy="20" r="3" fill={accentColor} opacity="0.8"/>
+            </svg>
+          </div>
+        </div>
+
+        {/* Countdown digits — amber theme */}
+        <div style={{display:'flex', gap:'8px', alignItems:'center'}}>
+          {[
+            { val: countdown.days,    label: 'DAYS' },
+            { val: countdown.hours,   label: 'HRS' },
+            { val: countdown.minutes, label: 'MIN' },
+            { val: countdown.seconds, label: 'SEC' },
+          ].map(({ val, label }, i) => (
+            <div key={label} style={{display:'flex', alignItems:'center', gap:'8px'}}>
+              {i > 0 && (
+                <div style={{
+                  fontFamily:"'Bebas Neue',sans-serif",
+                  fontSize:'1.4rem',
+                  color:'#2a2200',
+                  marginTop:'-8px'
+                }}>:</div>
+              )}
+              <div style={{textAlign:'center'}}>
+                <div style={{
+                  fontFamily:"'Bebas Neue',sans-serif",
+                  fontSize:'2.2rem',
+                  lineHeight:1,
+                  color: isUrgent ? '#E8002D' : (i <= 1 ? '#FFB800' : '#eef0f5'),
+                  minWidth:'42px',
+                  textAlign:'center',
+                  transition:'color 0.3s',
+                  textShadow: isUrgent ? '0 0 20px rgba(232,0,45,0.4)' : (i <= 1 ? '0 0 20px rgba(255,184,0,0.3)' : 'none'),
+                }}>
+                  {String(val).padStart(2, '0')}
+                </div>
+                <div style={{
+                  fontFamily:"'JetBrains Mono',monospace",
+                  fontSize:'0.5rem',
+                  color:'#333',
+                  letterSpacing:'2px',
+                  marginTop:'2px'
+                }}>
+                  {label}
+                </div>
+              </div>
+            </div>
+          ))}
+
+          {/* Race time indicator on the right */}
+          <div style={{
+            marginLeft:'auto',
+            textAlign:'right',
+            borderLeft:'1px solid #1e1e2c',
+            paddingLeft:'12px'
+          }}>
+            <div style={{
+              fontFamily:"'JetBrains Mono',monospace",
+              fontSize:'0.55rem',
+              color:'#333',
+              letterSpacing:'1px',
+              marginBottom:'2px'
+            }}>RACE START</div>
+            <div style={{
+              fontFamily:"'Bebas Neue',sans-serif",
+              fontSize:'0.85rem',
+              color:'#444',
+              letterSpacing:'1px'
+            }}>
+              {new Date(race.raceStart).toLocaleString('en-US', {
+                month:'short', day:'numeric',
+                hour:'numeric', minute:'2-digit',
+                timeZoneName:'short'
+              })}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <style>{`
+        @keyframes pulse-bar {
+          0%, 100% { background-position: 0% 50%; opacity: 1; }
+          50% { background-position: 100% 50%; opacity: 0.7; }
+        }
+      `}</style>
+    </div>
+  )
+}
+
+// RACE mode — shown on Results/Leaderboard pages, counts down to race start
+function RaceStartCountdown({ race }) {
+  const countdown = useCountdown(race.raceStart)
+  const qualiCountdown = useCountdown(race.qualiLock)
+  if (!countdown) return null
+
   const msUntilRace = new Date(race.raceStart) - new Date()
   if (msUntilRace > 5 * 24 * 60 * 60 * 1000 || msUntilRace < 0) return null
 
-  const isUrgent = qualiCountdown && !qualiCountdown.done && 
-    (new Date(race.qualiLock) - new Date()) < 3 * 60 * 60 * 1000 // under 3hrs to quali
-
-  const trackPath = getTrackPath(race.country)
+  const isUrgent = qualiCountdown && !qualiCountdown.done &&
+    (new Date(race.qualiLock) - new Date()) < 3 * 60 * 60 * 1000
+  const trackPath = TRACK_PATHS[race.country] || TRACK_PATHS['australia']
 
   return (
     <div style={{
       background: 'linear-gradient(135deg, #0d0d12 0%, #12080a 50%, #0d0d12 100%)',
       border: `1px solid ${isUrgent ? '#E8002D' : '#1e1e2c'}`,
       borderRadius: '12px',
-      padding: '0',
       marginBottom: '20px',
       overflow: 'hidden',
       position: 'relative',
       boxShadow: isUrgent ? '0 0 30px rgba(232,0,45,0.15)' : '0 4px 24px rgba(0,0,0,0.4)',
     }}>
-      {/* Red top accent bar */}
       <div style={{
         height: '3px',
-        background: isUrgent 
-          ? 'linear-gradient(90deg, #E8002D, #ff6b6b, #E8002D)' 
+        background: isUrgent
+          ? 'linear-gradient(90deg, #E8002D, #ff6b6b, #E8002D)'
           : 'linear-gradient(90deg, #E8002D, #8b0000)',
         backgroundSize: isUrgent ? '200% 100%' : '100% 100%',
         animation: isUrgent ? 'pulse-bar 1.5s ease-in-out infinite' : 'none',
       }} />
 
       <div style={{padding: '18px 20px'}}>
-        {/* Header row */}
         <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:'16px'}}>
           <div>
             <div style={{
@@ -121,24 +273,15 @@ export default function RaceCountdown({ race }) {
             </div>
           </div>
 
-          {/* Track outline SVG */}
           <div style={{opacity:0.25, flexShrink:0}}>
             <svg width="80" height="80" viewBox="0 0 100 100" fill="none">
-              <path
-                d={trackPath}
-                stroke="#E8002D"
-                strokeWidth="4"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                fill="none"
-              />
-              {/* Start/finish line marker */}
+              <path d={trackPath} stroke="#E8002D" strokeWidth="4"
+                strokeLinecap="round" strokeLinejoin="round" fill="none" />
               <circle cx="50" cy="20" r="3" fill="#E8002D" opacity="0.8"/>
             </svg>
           </div>
         </div>
 
-        {/* Countdown digits */}
         <div style={{display:'flex', gap:'8px', alignItems:'center'}}>
           {[
             { val: countdown.days,    label: 'DAYS' },
@@ -161,9 +304,9 @@ export default function RaceCountdown({ race }) {
                   fontSize: countdown.days === 0 && i === 0 ? '1.6rem' : '2.2rem',
                   lineHeight:1,
                   color: isUrgent && i >= 2 ? '#E8002D' : '#eef0f5',
-                  minWidth: '42px',
+                  minWidth:'42px',
                   textAlign:'center',
-                  transition: 'color 0.3s',
+                  transition:'color 0.3s',
                   textShadow: isUrgent && i >= 2 ? '0 0 20px rgba(232,0,45,0.4)' : 'none',
                 }}>
                   {String(val).padStart(2, '0')}
@@ -181,7 +324,6 @@ export default function RaceCountdown({ race }) {
             </div>
           ))}
 
-          {/* Quali lock indicator */}
           {qualiCountdown && !qualiCountdown.done && (
             <div style={{
               marginLeft:'auto',
@@ -202,9 +344,9 @@ export default function RaceCountdown({ race }) {
                 color: isUrgent ? '#E8002D' : '#666',
                 letterSpacing:'1px'
               }}>
-                {qualiCountdown.days > 0 
+                {qualiCountdown.days > 0
                   ? `${qualiCountdown.days}D ${qualiCountdown.hours}H`
-                  : qualiCountdown.hours > 0 
+                  : qualiCountdown.hours > 0
                     ? `${qualiCountdown.hours}H ${qualiCountdown.minutes}M`
                     : `${qualiCountdown.minutes}M ${qualiCountdown.seconds}S`
                 }
@@ -233,4 +375,9 @@ export default function RaceCountdown({ race }) {
       `}</style>
     </div>
   )
+}
+
+export default function RaceCountdown({ race, mode = 'race' }) {
+  if (mode === 'quali') return <QualiCountdown race={race} />
+  return <RaceStartCountdown race={race} />
 }
