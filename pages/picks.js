@@ -123,7 +123,7 @@ export default function Picks({ session, player, loading }) {
         {/* Race countdown — shows 5 days before race */}
         {(() => {
           const nextRace = RACES.find(r => new Date(r.raceStart) > new Date())
-          return nextRace ? <RaceCountdown race={nextRace} /> : null
+          return nextRace ? <RaceCountdown race={nextRace} mode="quali" /> : null
         })()}
 
         <Card className="mb-4">
