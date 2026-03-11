@@ -1,7 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { createClient } from '@supabase/supabase-js'
 
-export const config = { maxDuration: 30 }
+export const config = { maxDuration: 60 }
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 const supabase = createClient(
@@ -43,16 +43,19 @@ export default async function handler(req, res) {
   }
 
   try {
-    // No web search — use Claude's knowledge directly, much faster and no rate limit issues
     const message = await anthropic.messages.create({
       model: 'claude-sonnet-4-5',
-      max_tokens: 512,
+      max_tokens: 1024,
+      tools: [{ type: 'web_search_20250305', name: 'web_search' }],
       messages: [{
         role: 'user',
-        content: `You are an F1 analyst. Based on your knowledge of the 2026 F1 season so far, give win probabilities for the ${race_name} Grand Prix.
+        content: `Search for: "2026 F1 ${race_name} Grand Prix betting odds" and "2026 F1 championship standings". 
+
+Use what you find to give accurate win probabilities. Today's date is ${new Date().toDateString()}.
+Important: only reference sessions and results that have actually happened. Do not invent practice or qualifying results.
 
 Respond with ONLY this JSON, nothing else, no markdown:
-{"summary":"2-3 sentence punchy insight on who to watch and why","odds":[{"driver":"LastName","probability":0.35},{"driver":"LastName","probability":0.22},{"driver":"LastName","probability":0.15},{"driver":"LastName","probability":0.10},{"driver":"LastName","probability":0.08},{"driver":"LastName","probability":0.06},{"driver":"LastName","probability":0.04}]}
+{"summary":"2-3 sentence punchy insight on who to watch and why, grounded in current real-world form and odds","odds":[{"driver":"LastName","probability":0.35},{"driver":"LastName","probability":0.22},{"driver":"LastName","probability":0.15},{"driver":"LastName","probability":0.10},{"driver":"LastName","probability":0.08},{"driver":"LastName","probability":0.06},{"driver":"LastName","probability":0.04}]}
 
 Only use drivers from: Norris, Piastri, Russell, Hamilton, Leclerc, Sainz, Verstappen, Alonso, Stroll, Hulkenberg, Gasly, Doohan, Antonelli, Hadjar, Lawson, Tsunoda, Albon, Colapinto, Bearman, Bortoleto, Magnussen, Ocon, Lindblad.
 Probabilities must sum to 1.0. Order by probability descending. Respond with ONLY the JSON object starting with { and ending with }`
@@ -70,7 +73,6 @@ Probabilities must sum to 1.0. Order by probability descending. Respond with ONL
     const parsed = JSON.parse(raw.slice(start, end + 1))
     if (!parsed.odds || !parsed.summary) throw new Error('Invalid response structure')
 
-    // Cache it
     try {
       await supabase.from('race_odds').upsert({
         race_id,
