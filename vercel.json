@@ -3,6 +3,10 @@
     {
       "path": "/api/autolock",
       "schedule": "*/5 * * * *"
+    },
+    {
+      "path": "/api/send-reminders",
+      "schedule": "*/30 * * * *"
     }
   ]
 }
