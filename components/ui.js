@@ -1,4 +1,4 @@
-export function Btn({ children, onClick, red, ghost, green, blue, small, disabled, full, type = 'button', className = '' }) {
+export function Btn({ children, onClick, red, ghost, green, blue, small, disabled, full, type = 'button', className = '', style }) {
   const base = `inline-flex items-center justify-center gap-1.5 rounded-lg font-bold cursor-pointer transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed ${full ? 'w-full' : ''} ${small ? 'px-3 py-1.5 text-xs' : 'px-5 py-2.5 text-sm'} ${className}`
   const variant = red    ? 'bg-f1red text-white hover:bg-red-700'
     : green  ? 'bg-green-950 border border-green-800 text-green-400 hover:bg-green-900'
@@ -6,15 +6,15 @@ export function Btn({ children, onClick, red, ghost, green, blue, small, disable
     : ghost  ? 'bg-transparent border border-[#2e2e42] text-[#888] hover:border-[#555] hover:text-[#bbb]'
     :          'bg-[#1e1e2c] border border-[#2e2e42] text-[#aaa] hover:border-[#555]'
   return (
-    <button type={type} className={`${base} ${variant}`} onClick={onClick} disabled={disabled}>
+    <button type={type} className={`${base} ${variant}`} onClick={onClick} disabled={disabled} style={style}>
       {children}
     </button>
   )
 }
 
-export function Card({ children, className = '' }) {
+export function Card({ children, className = '', style }) {
   return (
-    <div className={`bg-[#16161e] border border-[#1e1e2c] rounded-xl p-5 ${className}`}>
+    <div className={`bg-[#16161e] border border-[#1e1e2c] rounded-xl p-5 card-hover ${className}`} style={style}>
       {children}
     </div>
   )
