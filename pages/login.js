@@ -105,6 +105,14 @@ export default function Login() {
             </div>
           )}
         </div>
+
+        <div className="mt-6 text-center" style={{fontFamily:"'JetBrains Mono',monospace",fontSize:"0.58rem",color:"#2a2a3a",letterSpacing:"1px"}}>
+          <a href="/privacy-policy.html" style={{color:"#2a2a3a",textDecoration:"none",borderBottom:"1px solid transparent",transition:"all 0.2s"}}
+            onMouseOver={e=>e.target.style.color="#555"} onMouseOut={e=>e.target.style.color="#2a2a3a"}>privacy</a>
+          <span style={{margin:"0 8px"}}>·</span>
+          <a href="/terms-and-conditions.html" style={{color:"#2a2a3a",textDecoration:"none",borderBottom:"1px solid transparent",transition:"all 0.2s"}}
+            onMouseOver={e=>e.target.style.color="#555"} onMouseOut={e=>e.target.style.color="#2a2a3a"}>terms</a>
+        </div>
       </div>
     </div>
   )
