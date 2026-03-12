@@ -40,7 +40,6 @@ export default function Results({ session, player, loading }) {
   async function loadCommentary(rid) {
     setCommentary(null)
     setCommentaryLoading(true)
-    // First check cache
     const { data: cached } = await supabase
       .from('race_commentary')
       .select('commentary')
@@ -53,7 +52,6 @@ export default function Results({ session, player, loading }) {
       return
     }
 
-    // Generate new
     try {
       const res = await fetch('/api/generate-commentary', {
         method: 'POST',
@@ -80,12 +78,18 @@ export default function Results({ session, player, loading }) {
 
   return (
     <Layout session={session} player={player}>
+      <style>{`
+        .results-grid { display: grid; grid-template-columns: 90px 1fr 36px 36px 36px 46px 46px; gap: 4px; }
+        @media (max-width: 600px) {
+          .results-grid { grid-template-columns: 60px 1fr 28px 28px 28px 36px 40px; gap: 2px; }
+        }
+      `}</style>
       <div className="fade-up">
         <div className="mb-5">
           <h1 style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:"2rem",letterSpacing:"3px"}}>RACE RESULTS</h1>
         </div>
 
-        {/* Race countdown — shows 5 days before race */}
+        {/* Race countdown */}
         {(() => {
           const nextRace = RACES.find(r => new Date(r.raceStart) > new Date())
           return nextRace ? <RaceCountdown race={nextRace} /> : null
@@ -119,17 +123,15 @@ export default function Results({ session, player, loading }) {
             </div>
           )}
 
-          <div className="grid px-4 py-2 border-b border-[#1e1e2c]"
-            style={{gridTemplateColumns:'90px 1fr 36px 36px 36px 46px 46px',gap:'4px'}}>
-            <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:"0.55rem",color:"#333"}}>PLAYER</div>
-            <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:"0.55rem",color:"#333"}}>PICKS</div>
-            <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:"0.55rem",color:"#333",textAlign:'center'}}>P1</div>
-            <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:"0.55rem",color:"#333",textAlign:'center'}}>P2</div>
-            <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:"0.55rem",color:"#333",textAlign:'center'}}>P3</div>
-            <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:"0.55rem",color:"#333",textAlign:'center'}}>BONUS</div>
-            <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:"0.55rem",color:"#333",textAlign:'center'}}>TOTAL</div>
+          {/* Header row */}
+          <div className="results-grid px-4 py-2 border-b border-[#1e1e2c]">
+            {['PLAYER','PICKS','P1','P2','P3','BONUS','TOTAL'].map((h, i) => (
+              <div key={h} style={{fontFamily:"'JetBrains Mono',monospace",fontSize:"0.55rem",color:"#333",
+                textAlign: i >= 2 ? 'center' : 'left'}}>{h}</div>
+            ))}
           </div>
 
+          {/* Player rows */}
           <div>
             {players.map((p, i) => {
               const pk = picks.find(pk => pk.player_id === p.id && pk.race_id === raceId)
@@ -145,36 +147,35 @@ export default function Results({ session, player, loading }) {
               const ptColor = (v) => v > 0 ? '#eef0f5' : '#2a2a3a'
 
               return (
-                <div key={p.id} className="grid px-4 py-3 items-center"
-                  style={{gridTemplateColumns:'90px 1fr 36px 36px 36px 46px 46px',
-                    gap:'4px', borderBottom: i < players.length - 1 ? '1px solid #0e0e16' : 'none',
+                <div key={p.id} className="results-grid px-4 py-3 items-center"
+                  style={{borderBottom: i < players.length - 1 ? '1px solid #0e0e16' : 'none',
                     background: i % 2 === 0 ? 'transparent' : '#11111a'}}>
 
-                  <div className="font-semibold text-sm">{p.name}</div>
+                  <div className="font-semibold" style={{fontSize:'0.82rem'}}>{p.name}</div>
 
-                  <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:"0.68rem",display:"flex",gap:"3px",alignItems:"center",flexWrap:"wrap"}}>
+                  <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:"0.62rem",lineHeight:'1.5',minWidth:0}}>
                     {!pk ? <span className="text-[#2a2a3a]">no pick</span>
                       : pk.dns ? <span className="text-red-500">DNS</span>
-                      : <>
+                      : <span style={{display:'flex',gap:'3px',alignItems:'center',flexWrap:'wrap'}}>
                           {[pk.p1, pk.p2, pk.p3].map((d, j) => (
                             <span key={j}>
                               <span style={{color: driverColor(d,j), fontWeight: driverWeight(d,j)}}>{d}</span>
                               {j < 2 && <span className="text-[#2a2a3a]"> / </span>}
                             </span>
                           ))}
-                          {isPerfect && <span style={{marginLeft:'5px'}}>🤯</span>}
-                          {isAllRight && <span style={{marginLeft:'5px'}}>🥂</span>}
-                        </>
+                          {isPerfect && <span style={{marginLeft:'3px'}}>🤯</span>}
+                          {isAllRight && <span style={{marginLeft:'3px'}}>🥂</span>}
+                        </span>
                     }
                   </div>
 
-                  <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:"0.75rem",textAlign:'center',color:sc?ptColor(sc.p1):'#2a2a3a',fontWeight:sc&&sc.p1>0?700:400}}>{sc?sc.p1:'—'}</div>
-                  <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:"0.75rem",textAlign:'center',color:sc?ptColor(sc.p2):'#2a2a3a',fontWeight:sc&&sc.p2>0?700:400}}>{sc?sc.p2:'—'}</div>
-                  <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:"0.75rem",textAlign:'center',color:sc?ptColor(sc.p3):'#2a2a3a',fontWeight:sc&&sc.p3>0?700:400}}>{sc?sc.p3:'—'}</div>
-                  <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:"0.75rem",textAlign:'center',color:sc&&sc.bonus>0?'#FFD060':'#2a2a3a',fontWeight:sc&&sc.bonus>0?700:400}}>
+                  <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:"0.7rem",textAlign:'center',color:sc?ptColor(sc.p1):'#2a2a3a',fontWeight:sc&&sc.p1>0?700:400}}>{sc?sc.p1:'—'}</div>
+                  <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:"0.7rem",textAlign:'center',color:sc?ptColor(sc.p2):'#2a2a3a',fontWeight:sc&&sc.p2>0?700:400}}>{sc?sc.p2:'—'}</div>
+                  <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:"0.7rem",textAlign:'center',color:sc?ptColor(sc.p3):'#2a2a3a',fontWeight:sc&&sc.p3>0?700:400}}>{sc?sc.p3:'—'}</div>
+                  <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:"0.7rem",textAlign:'center',color:sc&&sc.bonus>0?'#FFD060':'#2a2a3a',fontWeight:sc&&sc.bonus>0?700:400}}>
                     {sc&&sc.bonus>0?`+${sc.bonus}`:'—'}
                   </div>
-                  <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:"1.2rem",textAlign:'center',
+                  <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:"1.1rem",textAlign:'center',
                     color: sc ? (sc.total>=8?'#FFD060':sc.total>=5?'#5a9abf':sc.total>0?'#eef0f5':'#2a2a3a') : '#2a2a3a'}}>
                     {sc ? sc.total : '—'}
                   </div>
