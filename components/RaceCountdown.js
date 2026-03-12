@@ -1,29 +1,77 @@
 import { useState, useEffect } from 'react'
 
 const TRACK_PATHS = {
-  'australia':    'M50,20 L80,20 Q90,20 90,30 L90,50 Q90,60 80,65 L70,70 Q60,75 55,85 L50,90 Q45,95 35,90 L25,80 Q15,75 15,65 L15,40 Q15,30 25,25 Z',
-  'china':        'M20,15 L75,15 Q85,15 85,25 L85,40 L75,45 L75,65 Q75,75 65,75 L55,75 L50,85 Q45,90 35,85 L20,75 Q15,70 15,60 L15,25 Q15,15 20,15 Z',
-  'japan':        'M25,15 L70,15 Q80,15 82,25 L82,35 Q82,42 75,45 L65,48 L65,60 Q65,70 55,72 L40,72 Q30,72 25,65 L18,50 Q15,40 18,30 Z',
-  'bahrain':      'M30,15 L65,15 Q75,15 78,25 L80,45 Q80,55 72,60 L65,65 L65,75 Q65,82 55,83 L40,83 Q30,82 28,75 L25,55 Q22,45 25,35 Z',
-  'saudi-arabia': 'M25,20 L70,20 Q80,20 82,28 L85,50 Q85,60 78,65 L70,68 L68,78 Q65,85 55,85 L40,85 Q30,84 27,77 L22,55 Q18,42 22,30 Z',
-  'usa':          'M20,25 L75,20 Q85,20 85,30 L85,55 Q85,65 75,68 L60,70 L55,80 Q50,88 40,85 L25,78 Q15,72 15,62 L15,35 Q15,25 20,25 Z',
-  'canada':       'M30,20 L68,18 Q78,18 80,27 L82,45 Q82,55 74,60 L65,63 L63,73 Q60,82 50,83 L35,82 Q25,80 22,72 L18,50 Q16,38 20,28 Z',
-  'monaco':       'M35,15 L60,15 Q68,15 70,22 L72,35 L80,42 Q85,48 82,56 L75,65 Q70,72 62,73 L50,74 Q40,74 35,67 L28,55 Q23,45 25,35 L28,22 Q30,15 35,15 Z',
-  'spain':        'M22,20 L72,18 Q82,18 83,27 L85,48 Q84,58 76,62 L67,65 L65,75 Q62,83 52,84 L37,83 Q27,81 24,73 L20,52 Q17,40 20,28 Z',
-  'austria':      'M28,18 L66,15 Q76,14 78,23 L80,40 Q80,50 73,55 L65,58 L63,68 Q60,76 50,78 L37,77 Q27,75 24,67 L20,47 Q18,36 21,26 Z',
-  'great-britain':'M25,22 L68,18 Q78,17 80,26 L82,46 Q82,56 74,61 L66,64 L64,74 Q61,82 51,83 L36,82 Q26,80 23,72 L19,51 Q17,39 20,29 Z',
-  'belgium':      'M30,18 L67,15 Q77,15 79,24 L81,44 Q81,54 73,59 L64,62 L62,72 Q59,80 49,81 L35,80 Q25,78 22,70 L18,49 Q16,37 19,26 Z',
-  'hungary':      'M26,20 L69,17 Q79,17 81,26 L83,47 Q83,57 75,62 L66,65 L64,75 Q61,83 51,84 L36,83 Q26,81 23,73 L19,52 Q17,40 20,28 Z',
-  'netherlands':  'M28,19 L67,16 Q77,16 79,25 L81,46 Q81,56 73,61 L64,64 L62,74 Q59,82 49,83 L34,82 Q24,80 21,72 L17,51 Q15,39 18,27 Z',
-  'italy':        'M24,21 L70,18 Q80,18 82,27 L84,48 Q84,58 76,63 L67,66 L65,76 Q62,84 52,85 L37,84 Q27,82 24,74 L20,53 Q18,41 21,29 Z',
-  'azerbaijan':   'M22,22 L71,19 Q81,19 83,28 L85,50 Q85,60 77,65 L68,68 L66,78 Q63,86 53,87 L38,86 Q28,84 25,76 L21,55 Q19,43 22,31 Z',
-  'singapore':    'M26,20 L69,17 Q79,17 81,26 L83,47 L75,52 L75,62 Q75,72 65,74 L52,75 L48,83 Q44,89 35,86 L24,77 Q17,70 17,60 L17,30 Q17,20 26,20 Z',
-  'mexico':       'M24,20 L70,17 Q80,17 82,26 L84,47 Q84,57 76,62 L67,65 L65,75 Q62,83 52,84 L37,83 Q27,81 24,73 L20,52 Q18,40 21,28 Z',
-  'brazil':       'M27,20 L68,17 Q78,17 80,26 L82,47 Q82,57 74,62 L65,65 L63,75 Q60,83 50,84 L35,83 Q25,81 22,73 L18,52 Q16,40 19,28 Z',
-  'qatar':        'M25,21 L69,18 Q79,18 81,27 L83,48 Q83,58 75,63 L66,66 L64,76 Q61,84 51,85 L36,84 Q26,82 23,74 L19,53 Q17,41 20,29 Z',
-  'abu-dhabi':    'M23,21 L70,18 Q80,18 82,27 L84,49 Q84,59 76,64 L67,67 L65,77 Q62,85 52,86 L37,85 Q27,83 24,75 L20,54 Q18,42 21,30 Z',
-  'madrid':       'M24,20 L70,17 Q80,17 82,26 L84,47 Q84,57 76,62 L67,65 L65,75 Q62,83 52,84 L37,83 Q27,81 24,73 L20,52 Q18,40 21,28 Z',
-  'las-vegas':    'M20,25 L75,20 Q85,20 85,30 L85,55 Q85,65 75,68 L60,70 L55,80 Q50,88 40,85 L25,78 Q15,72 15,62 L15,35 Q15,25 20,25 Z',
+  // Albert Park — clockwise lake circuit, long straights with tight chicanes
+  'australia':    'M30,15 L70,15 Q80,15 80,25 L80,38 L72,42 L80,48 L80,65 Q80,75 70,80 L55,85 Q45,88 38,82 L25,70 Q18,62 18,50 L18,35 Q18,20 30,15 Z',
+
+  // Shanghai — iconic "shang" double hairpin at top, long back straight
+  'china':        'M25,20 L40,20 Q48,20 50,15 Q52,20 60,20 L75,20 Q82,20 82,28 L82,45 L70,50 L70,65 Q70,75 60,78 L45,80 Q35,80 30,72 L22,55 Q18,45 18,35 L18,28 Q18,20 25,20 Z',
+
+  // Suzuka — figure-8 crossover, esses, spoon curve, 130R
+  'japan':        'M20,30 Q20,18 32,18 L55,18 Q68,18 72,28 L75,42 Q76,52 68,55 L55,55 Q48,55 48,62 L48,72 Q48,82 38,82 L28,80 Q18,78 18,68 L20,55 Q22,48 30,48 L42,48 Q50,48 50,40 L48,30 Q46,24 38,24 L28,26 Q20,30 20,30 Z',
+
+  // Bahrain — tight infield, long straights, multi-apex turns
+  'bahrain':      'M35,15 L65,15 Q75,15 75,25 L75,40 L68,45 L75,52 L75,70 Q75,80 65,82 L45,82 Q35,82 32,75 L28,55 L35,48 L28,40 L28,25 Q28,15 35,15 Z',
+
+  // Jeddah — ultra-fast street circuit, flowing S-curves, very long
+  'saudi-arabia': 'M75,85 L75,25 Q75,15 65,15 L55,15 Q48,15 48,22 L48,35 Q48,42 42,42 L35,42 Q28,42 28,50 L28,60 Q28,68 35,68 L42,68 Q48,68 48,75 L48,82 Q48,88 40,88 L25,85 Q18,82 18,72 L18,30 Q18,18 28,15',
+
+  // Miami — Hard Rock Stadium, straights and chicanes
+  'usa-miami':    'M25,20 L70,20 Q80,20 80,30 L80,45 L72,50 L80,55 L80,70 Q80,80 70,80 L35,80 Q25,80 22,72 L20,55 Q18,45 22,38 L30,35 Q35,30 30,25 Q28,20 25,20 Z',
+
+  // Montreal — Île Notre-Dame, long straights, tight chicanes, Wall of Champions
+  'canada':       'M20,25 L75,20 Q82,20 82,28 L82,40 L75,42 L82,46 L82,58 L75,62 L82,68 L82,78 Q82,85 72,85 L25,85 Q18,85 18,78 L18,35 Q18,25 25,25 Z',
+
+  // Monaco — hairpin, tunnel, swimming pool chicane
+  'monaco':       'M25,25 L65,22 Q75,22 75,30 L75,38 L82,42 Q88,45 85,52 L78,58 L70,55 L60,60 Q55,65 50,62 L40,58 Q32,55 28,60 L22,70 Q18,75 22,80 L60,82 Q72,82 72,72 L72,55',
+
+  // Barcelona — long straight, sweeping turns, tight final sector
+  'spain':        'M25,18 L68,18 Q78,18 80,28 L82,42 Q82,52 75,55 L65,55 Q58,55 58,62 L58,72 Q58,80 48,82 L35,82 Q25,80 22,72 L18,50 Q16,38 20,26 Z',
+
+  // Red Bull Ring — short, steep, 3 big straights
+  'austria':      'M30,22 L70,18 Q80,16 82,25 L82,38 Q82,45 76,48 L60,55 Q52,58 52,65 L52,72 Q52,80 42,80 L30,78 Q20,76 20,65 L22,45 Q24,35 30,32 Z',
+
+  // Silverstone — Maggotts-Becketts, fast and flowing
+  'great-britain':'M35,15 L60,15 Q72,15 75,22 L82,38 Q85,48 78,52 L65,55 L60,48 L48,52 L40,62 Q35,70 28,72 L22,72 Q15,70 15,60 L18,42 Q20,32 28,25 Z',
+
+  // Spa — Eau Rouge, Kemmel straight, La Source
+  'belgium':      'M25,30 L25,18 Q25,12 35,12 L60,15 Q70,16 72,25 L72,40 Q72,48 65,52 L55,58 Q48,62 48,70 L50,78 Q52,85 45,88 L30,85 Q20,82 18,72 L18,50 Q18,40 25,35 Z',
+
+  // Hungaroring — tight and twisty, slow corners
+  'hungary':      'M30,18 L65,15 Q75,15 78,25 L80,40 Q80,50 72,55 L62,60 Q55,64 55,72 L55,78 Q55,85 45,85 L32,82 Q22,78 20,68 L18,48 Q17,35 22,25 Z',
+
+  // Zandvoort — banked turns, seaside, tight
+  'netherlands':  'M28,20 L62,18 Q72,18 75,26 L78,42 Q80,52 72,58 L60,62 Q52,65 50,72 L48,80 Q45,86 36,84 L25,78 Q18,72 18,60 L20,40 Q22,28 28,20 Z',
+
+  // Monza — Temple of Speed, massive straights, tight chicanes
+  'italy':        'M30,15 L65,15 Q75,15 75,22 L75,35 L68,38 L75,42 L75,60 Q75,68 68,72 L55,78 Q45,82 38,78 L25,68 Q18,62 18,50 L18,30 Q18,18 28,15 Z',
+
+  // Baku — ultra-long straight, tight old city, castle section
+  'azerbaijan':   'M78,82 L78,25 Q78,18 70,18 L40,18 Q32,18 30,25 L28,35 Q26,42 32,45 L42,45 Q48,45 48,52 L45,60 Q42,65 35,65 L25,62 Q18,60 18,68 L20,78 Q22,85 30,85 L78,82 Z',
+
+  // Marina Bay — street circuit, tight corners, waterfront
+  'singapore':    'M25,22 L65,18 Q75,18 78,28 L80,45 Q80,55 72,58 L60,60 L58,70 Q55,78 45,80 L30,80 Q20,78 18,68 L18,40 Q18,28 25,22 Z',
+
+  // COTA — iconic S-curves, big elevation, long back straight, stadium section
+  'usa':          'M22,25 L35,18 Q42,15 48,20 L55,28 Q58,32 65,28 L78,22 Q85,20 85,28 L85,55 Q85,65 78,68 L65,72 Q55,75 50,82 L35,85 Q22,85 18,72 L18,40 Q18,30 22,25 Z',
+
+  // Hermanos Rodriguez — long straight, peraltada, stadium, high altitude
+  'mexico':       'M30,18 L68,18 Q78,18 78,28 L78,42 Q78,50 70,52 L58,52 Q50,52 50,60 L50,72 Q50,80 40,82 L30,82 Q20,80 20,70 L20,50 L28,45 L20,40 L20,28 Q20,18 30,18 Z',
+
+  // Interlagos — anti-clockwise, short lap, big elevation, sweeping curves
+  'brazil':       'M72,25 L72,65 Q72,75 62,78 L40,82 Q28,82 25,72 L22,50 Q20,40 25,32 L35,22 Q42,18 52,20 L62,22 Q72,22 72,25 Z',
+
+  // Lusail — flowing desert circuit, long straights, fast sweeping corners
+  'qatar':        'M28,18 L68,15 Q78,15 80,25 L82,45 Q82,55 75,60 L65,65 Q58,68 55,75 L50,82 Q45,88 38,85 L25,78 Q18,72 18,58 L18,35 Q18,22 28,18 Z',
+
+  // Yas Marina — hotel straddling track, two long straights, tight chicanes
+  'abu-dhabi':    'M30,15 L65,15 Q75,15 78,25 L80,42 Q80,52 72,56 L62,56 Q55,56 55,65 L55,75 Q55,82 45,82 L30,82 Q20,80 18,70 L18,45 Q18,30 22,22 Z',
+
+  // Madrid street circuit
+  'madrid':       'M25,20 L70,18 Q80,18 82,28 L82,48 Q82,58 74,62 L60,65 Q52,68 52,76 L48,82 Q42,88 34,84 L22,75 Q16,68 18,55 L22,38 Q24,26 32,22 Z',
+
+  // Las Vegas Strip — long straight down the Strip, tight corners
+  'las-vegas':    'M25,82 L25,25 Q25,18 35,18 L72,18 Q80,18 80,25 L80,42 Q80,48 74,50 L60,50 Q52,50 52,58 L52,72 Q52,80 45,82 Z',
 }
 
 function useCountdown(targetDate) {
@@ -52,7 +100,6 @@ function QualiCountdown({ race }) {
   const countdown = useCountdown(race.qualiLock)
   if (!countdown) return null
 
-  // Show within 5 days of quali lock
   const msUntilQuali = new Date(race.qualiLock) - new Date()
   if (msUntilQuali > 5 * 24 * 60 * 60 * 1000 || countdown.done) return null
 
@@ -70,7 +117,6 @@ function QualiCountdown({ race }) {
       position: 'relative',
       boxShadow: isUrgent ? '0 0 30px rgba(232,0,45,0.15)' : '0 4px 24px rgba(0,0,0,0.4)',
     }}>
-      {/* Amber top accent bar */}
       <div style={{
         height: '3px',
         background: isUrgent
@@ -116,17 +162,14 @@ function QualiCountdown({ race }) {
             </div>
           </div>
 
-          {/* Track outline — amber tint */}
           <div style={{opacity:0.2, flexShrink:0}}>
             <svg width="80" height="80" viewBox="0 0 100 100" fill="none">
               <path d={trackPath} stroke={accentColor} strokeWidth="4"
                 strokeLinecap="round" strokeLinejoin="round" fill="none" />
-              <circle cx="50" cy="20" r="3" fill={accentColor} opacity="0.8"/>
             </svg>
           </div>
         </div>
 
-        {/* Countdown digits — amber theme */}
         <div style={{display:'flex', gap:'8px', alignItems:'center'}}>
           {[
             { val: countdown.days,    label: 'DAYS' },
@@ -169,7 +212,6 @@ function QualiCountdown({ race }) {
             </div>
           ))}
 
-          {/* Race time indicator on the right */}
           <div style={{
             marginLeft:'auto',
             textAlign:'right',
@@ -277,7 +319,6 @@ function RaceStartCountdown({ race }) {
             <svg width="80" height="80" viewBox="0 0 100 100" fill="none">
               <path d={trackPath} stroke="#E8002D" strokeWidth="4"
                 strokeLinecap="round" strokeLinejoin="round" fill="none" />
-              <circle cx="50" cy="20" r="3" fill="#E8002D" opacity="0.8"/>
             </svg>
           </div>
         </div>
