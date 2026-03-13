@@ -34,7 +34,7 @@ export default function Login() {
               F1 <span style={{color:"#E8002D"}}>PICK'EM</span>
             </span>
           </div>
-          <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:"0.65rem",color:"#555",letterSpacing:"2px"}}>
+          <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:"0.65rem",color:"#aaa",letterSpacing:"2px"}}>
             2026 SEASON
           </div>
         </div>
@@ -42,12 +42,12 @@ export default function Login() {
         <div className="bg-[#16161e] border border-[#1e1e2c] rounded-xl p-6">
           <div className="space-y-4">
             <div>
-              <div style={{fontSize:"0.68rem",color:"#555",letterSpacing:"1px",marginBottom:"6px",fontFamily:"'JetBrains Mono',monospace"}}>EMAIL</div>
+              <div style={{fontSize:"0.68rem",color:"#aaa",letterSpacing:"1px",marginBottom:"6px",fontFamily:"'JetBrains Mono',monospace"}}>EMAIL</div>
               <input type="email" value={email} onChange={e=>setEmail(e.target.value)}
                 placeholder="you@email.com" onKeyDown={e=>e.key==='Enter'&&handle()}/>
             </div>
             <div>
-              <div style={{fontSize:"0.68rem",color:"#555",letterSpacing:"1px",marginBottom:"6px",fontFamily:"'JetBrains Mono',monospace"}}>PASSWORD</div>
+              <div style={{fontSize:"0.68rem",color:"#aaa",letterSpacing:"1px",marginBottom:"6px",fontFamily:"'JetBrains Mono',monospace"}}>PASSWORD</div>
               <input type="password" value={password} onChange={e=>setPassword(e.target.value)}
                 placeholder="••••••••" onKeyDown={e=>e.key==='Enter'&&handle()}/>
             </div>
@@ -62,17 +62,17 @@ export default function Login() {
             </button>
           </div>
 
-          <div className="mt-4 text-center" style={{fontSize:"0.62rem",color:"#555",fontFamily:"'JetBrains Mono',monospace",letterSpacing:"1px"}}>
+          <div className="mt-4 text-center" style={{fontSize:"0.62rem",color:"#aaa",fontFamily:"'JetBrains Mono',monospace",letterSpacing:"1px"}}>
             registration for 2026 is closed
           </div>
         </div>
 
-        <div className="mt-6 text-center" style={{fontFamily:"'JetBrains Mono',monospace",fontSize:"0.58rem",color:"#4a4a5a",letterSpacing:"1px"}}>
-          <a href="/privacy-policy.html" style={{color:"#4a4a5a",textDecoration:"none",borderBottom:"1px solid transparent",transition:"all 0.2s"}}
-            onMouseOver={e=>e.target.style.color="#555"} onMouseOut={e=>e.target.style.color="#4a4a5a"}>privacy</a>
+        <div className="mt-6 text-center" style={{fontFamily:"'JetBrains Mono',monospace",fontSize:"0.58rem",color:"#999",letterSpacing:"1px"}}>
+          <a href="/privacy-policy.html" style={{color:"#999",textDecoration:"none",borderBottom:"1px solid transparent",transition:"all 0.2s"}}
+            onMouseOver={e=>e.target.style.color="#555"} onMouseOut={e=>e.target.style.color="#999"}>privacy</a>
           <span style={{margin:"0 8px"}}>·</span>
-          <a href="/terms-and-conditions.html" style={{color:"#4a4a5a",textDecoration:"none",borderBottom:"1px solid transparent",transition:"all 0.2s"}}
-            onMouseOver={e=>e.target.style.color="#555"} onMouseOut={e=>e.target.style.color="#4a4a5a"}>terms</a>
+          <a href="/terms-and-conditions.html" style={{color:"#999",textDecoration:"none",borderBottom:"1px solid transparent",transition:"all 0.2s"}}
+            onMouseOver={e=>e.target.style.color="#555"} onMouseOut={e=>e.target.style.color="#999"}>terms</a>
         </div>
       </div>
     </div>

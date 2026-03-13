@@ -211,7 +211,7 @@ export default function Commissioner({ session, player, loading }) {
   const subBtn = (s, lbl) => (
     <button onClick={() => setSection(s)}
       className="flex-1 rounded-md py-2 text-[13px] font-semibold transition-all"
-      style={{ background: section === s ? '#1e1e2c' : 'transparent', color: section === s ? '#eef0f5' : '#555', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
+      style={{ background: section === s ? '#1e1e2c' : 'transparent', color: section === s ? '#eef0f5' : '#aaa', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
       {lbl}
     </button>
   )
@@ -226,7 +226,7 @@ export default function Commissioner({ session, player, loading }) {
       <div className="fade-up">
         <div className="mb-5">
           <h1 style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:"2rem",letterSpacing:"3px"}}>COMMISSIONER</h1>
-          <div className="text-sm text-[#555] mt-1">Manage results · lock races · override picks</div>
+          <div className="text-sm text-[#aaa] mt-1">Manage results · lock races · override picks</div>
         </div>
 
         <div className="flex bg-[#111118] border border-[#1e1e2c] rounded-lg p-1 mb-5 gap-1">
@@ -240,7 +240,7 @@ export default function Commissioner({ session, player, loading }) {
         {/* RESULTS */}
         {section === 'results' && (
           <div className="flex flex-col gap-3">
-            <div className="bg-[#111118] border border-[#1e1e2c] rounded-lg px-4 py-3 text-sm text-[#555] flex gap-2">
+            <div className="bg-[#111118] border border-[#1e1e2c] rounded-lg px-4 py-3 text-sm text-[#aaa] flex gap-2">
               <span>👇</span>
               <span>Hit <span className="text-[#E8002D] font-bold">🔓 LOCK</span> when qualifying starts. Click <span className="text-red-400 font-bold">🔒 LOCKED</span> to reopen.</span>
             </div>
@@ -253,15 +253,15 @@ export default function Commissioner({ session, player, loading }) {
                 <Card key={r.id} className={`!p-3 ${res ? '!border-green-950' : locked ? '!border-red-950' : ''}`}>
                   <div className="flex justify-between items-center mb-2">
                     <div>
-                      <span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:"0.57rem",color:"#555"}}>R{i+1} · {r.date}  </span>
+                      <span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:"0.57rem",color:"#aaa"}}>R{i+1} · {r.date}  </span>
                       <span className="font-semibold">{r.name}</span>
                     </div>
                     <div className="flex gap-2 items-center">
-                      {res && <button onClick={() => clearResult(r.id)} className="text-[#666] hover:text-[#888] text-sm" style={{background:'none',border:'none',cursor:'pointer'}}>✕</button>}
+                      {res && <button onClick={() => clearResult(r.id)} className="text-[#bbb] hover:text-[#888] text-sm" style={{background:'none',border:'none',cursor:'pointer'}}>✕</button>}
                       {res && <span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:"0.6rem",color:"#2ECC71"}}>✓</span>}
                       {locked
                         ? <button onClick={() => unlockRace(r.id)} className="font-mono text-[11px] px-2 py-1 rounded border cursor-pointer" style={{background:'#1a0808',borderColor:'#6a2020',color:'#cc6666',fontFamily:'inherit'}}>🔒 LOCKED</button>
-                        : <button onClick={() => lockRace(r.id)} className="font-mono text-[11px] px-2 py-1 rounded border cursor-pointer transition-colors hover:border-red-600 hover:text-red-500" style={{background:'#0a0a12',borderColor:'#2e2e42',color:'#555',fontFamily:'inherit'}}>🔓 LOCK</button>
+                        : <button onClick={() => lockRace(r.id)} className="font-mono text-[11px] px-2 py-1 rounded border cursor-pointer transition-colors hover:border-red-600 hover:text-red-500" style={{background:'#0a0a12',borderColor:'#2e2e42',color:'#aaa',fontFamily:'inherit'}}>🔓 LOCK</button>
                       }
                       <Btn blue small onClick={() => aiFetch(r.id)} disabled={isFetching}>
                         {isFetching ? <Spinner /> : '🤖'} AI
@@ -271,7 +271,7 @@ export default function Commissioner({ session, player, loading }) {
                   <div className="grid gap-2 items-end" style={{gridTemplateColumns:'1fr 1fr 1fr auto'}}>
                     {[['1st', 'p1'], ['2nd', 'p2'], ['3rd', 'p3']].map(([lbl, field]) => (
                       <div key={field}>
-                        <div style={{fontSize:"0.58rem",color:"#555",marginBottom:"3px",fontFamily:"'JetBrains Mono',monospace"}}>{lbl}</div>
+                        <div style={{fontSize:"0.58rem",color:"#aaa",marginBottom:"3px",fontFamily:"'JetBrains Mono',monospace"}}>{lbl}</div>
                         <input list={`dl-${r.id}`} value={inp[field] || ''} onChange={e => setField(r.id, field, e.target.value)} placeholder="Driver" style={{fontSize:"0.82rem",padding:"6px 8px"}} />
                       </div>
                     ))}
@@ -318,7 +318,7 @@ export default function Commissioner({ session, player, loading }) {
                 <div className="flex justify-between items-center">
                   <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:"1.4rem",letterSpacing:"2px"}}>
                     {doneCount}/{players.length}
-                    <span style={{fontSize:"0.7rem",color:"#555",marginLeft:"8px",letterSpacing:"1px"}}>SUBMITTED</span>
+                    <span style={{fontSize:"0.7rem",color:"#aaa",marginLeft:"8px",letterSpacing:"1px"}}>SUBMITTED</span>
                   </div>
                   {missing.length > 0 && !isLocked && (
                     <div style={{fontSize:"0.7rem",color:"#E8002D",fontFamily:"'JetBrains Mono',monospace"}}>
@@ -339,7 +339,7 @@ export default function Commissioner({ session, player, loading }) {
                     <Card key={p.id} style={{borderColor: hasSubmitted ? '#1e2e1e' : '#2e1e1e'}}>
                       <div className="flex items-center justify-between">
                         <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:"1rem",letterSpacing:"2px",
-                          color: hasSubmitted ? '#eef0f5' : '#666'}}>
+                          color: hasSubmitted ? '#eef0f5' : '#bbb'}}>
                           {p.name.toUpperCase()}
                         </div>
                         {!hasSubmitted && (
@@ -378,8 +378,8 @@ export default function Commissioner({ session, player, loading }) {
         {section === 'picks' && (
           <div>
             <Card className="mb-3">
-              <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:"0.82rem",letterSpacing:"2px",color:"#666",marginBottom:"8px"}}>BULK IMPORT</div>
-              <div className="text-xs text-[#666] mb-2">
+              <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:"0.82rem",letterSpacing:"2px",color:"#bbb",marginBottom:"8px"}}>BULK IMPORT</div>
+              <div className="text-xs text-[#bbb] mb-2">
                 Format: <code className="text-blue-300">Player, Race, 1st, 2nd, 3rd</code>
                 <span className="text-red-500 ml-2">⚠ Bypasses lock</span>
               </div>
@@ -388,7 +388,7 @@ export default function Commissioner({ session, player, loading }) {
               <div className="mt-2"><Btn blue onClick={bulkImport}>📥 IMPORT</Btn></div>
             </Card>
             <Card>
-              <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:"0.82rem",letterSpacing:"2px",color:"#666",marginBottom:"12px"}}>SINGLE OVERRIDE</div>
+              <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:"0.82rem",letterSpacing:"2px",color:"#bbb",marginBottom:"12px"}}>SINGLE OVERRIDE</div>
               <div className="grid grid-cols-2 gap-3 mb-3">
                 <div>
                   <Label>PLAYER</Label>
@@ -426,12 +426,12 @@ export default function Commissioner({ session, player, loading }) {
             <Card className="mb-3">
               <div className="flex justify-between items-center">
                 <div>
-                  <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:"0.82rem",letterSpacing:"2px",color:"#666",marginBottom:"4px"}}>NEXT RACE</div>
+                  <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:"0.82rem",letterSpacing:"2px",color:"#bbb",marginBottom:"4px"}}>NEXT RACE</div>
                   <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:"1.4rem",letterSpacing:"2px"}}>
                     {nextRace ? `${nextRace.flag} ${nextRace.name.toUpperCase()}` : 'NO UPCOMING RACE'}
                   </div>
                   {nextRace && (
-                    <div style={{fontSize:"0.65rem",color:"#555",fontFamily:"'JetBrains Mono',monospace",marginTop:"2px"}}>
+                    <div style={{fontSize:"0.65rem",color:"#aaa",fontFamily:"'JetBrains Mono',monospace",marginTop:"2px"}}>
                       locks {new Date(nextRace.qualiLock).toLocaleString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZoneName: 'short' })}
                     </div>
                   )}
@@ -440,9 +440,9 @@ export default function Commissioner({ session, player, loading }) {
                   const hrs = Math.round((new Date(nextRace.qualiLock) - new Date()) / (1000 * 60 * 60))
                   return (
                     <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:"1.6rem",
-                      color: hrs <= 2 ? '#E8002D' : hrs <= 24 ? '#FFD060' : '#555'}}>
+                      color: hrs <= 2 ? '#E8002D' : hrs <= 24 ? '#FFD060' : '#aaa'}}>
                       {hrs}H
-                      <div style={{fontSize:"0.55rem",letterSpacing:"1px",color:"#555",fontFamily:"'JetBrains Mono',monospace"}}>UNTIL LOCK</div>
+                      <div style={{fontSize:"0.55rem",letterSpacing:"1px",color:"#aaa",fontFamily:"'JetBrains Mono',monospace"}}>UNTIL LOCK</div>
                     </div>
                   )
                 })()}
@@ -451,19 +451,19 @@ export default function Commissioner({ session, player, loading }) {
 
             {/* Message type selector */}
             <Card className="mb-3">
-              <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:"0.82rem",letterSpacing:"2px",color:"#666",marginBottom:"10px"}}>MESSAGE TYPE</div>
+              <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:"0.82rem",letterSpacing:"2px",color:"#bbb",marginBottom:"10px"}}>MESSAGE TYPE</div>
               <div className="flex bg-[#111118] border border-[#1e1e2c] rounded-lg p-1 mb-4 gap-1">
                 {[['24hr', '⏰ 24hr Reminder'], ['2hr', '🚨 2hr Urgent'], ['results', '🏁 Results'], ['custom', '✏️ Custom']].map(([val, lbl]) => (
                   <button key={val} onClick={() => setSmsType(val)}
                     className="flex-1 rounded-md py-2 text-[11px] font-semibold transition-all"
-                    style={{ background: smsType === val ? '#1e1e2c' : 'transparent', color: smsType === val ? '#eef0f5' : '#555', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
+                    style={{ background: smsType === val ? '#1e1e2c' : 'transparent', color: smsType === val ? '#eef0f5' : '#aaa', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
                     {lbl}
                   </button>
                 ))}
               </div>
 
               {/* Preview */}
-              <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:"0.62rem",color:"#4a4a5a",marginBottom:"6px"}}>PREVIEW</div>
+              <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:"0.62rem",color:"#999",marginBottom:"6px"}}>PREVIEW</div>
               <div style={{
                 background:'#111118',border:'1px solid #1e1e2c',borderRadius:'8px',padding:'12px',
                 fontSize:'0.82rem',color:'#888',lineHeight:'1.5'
@@ -476,7 +476,7 @@ export default function Commissioner({ session, player, loading }) {
 
               {smsType === 'custom' && (
                 <div className="mt-3">
-                  <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:"0.62rem",color:"#4a4a5a",marginBottom:"6px"}}>CUSTOM MESSAGE</div>
+                  <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:"0.62rem",color:"#999",marginBottom:"6px"}}>CUSTOM MESSAGE</div>
                   <textarea value={smsMessage} onChange={e => setSmsMessage(e.target.value)} rows={3}
                     placeholder="Type your custom message here..."
                     style={{background:'#1a1a24',border:'1px solid #2e2e42',color:'#eef0f5',borderRadius:'6px',padding:'10px 12px',fontFamily:'inherit',fontSize:'0.85rem',width:'100%',outline:'none',resize:'vertical'}} />
@@ -487,9 +487,9 @@ export default function Commissioner({ session, player, loading }) {
             {/* Player list with send buttons */}
             <Card className="mb-3">
               <div className="flex justify-between items-center mb-3">
-                <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:"0.82rem",letterSpacing:"2px",color:"#666"}}>SEND TO</div>
+                <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:"0.82rem",letterSpacing:"2px",color:"#bbb"}}>SEND TO</div>
                 <button onClick={selectAllSms}
-                  style={{fontSize:"0.62rem",color:"#555",fontFamily:"'JetBrains Mono',monospace",
+                  style={{fontSize:"0.62rem",color:"#aaa",fontFamily:"'JetBrains Mono',monospace",
                     background:'none',border:'none',cursor:'pointer'}}>
                   {players.every(p => smsPlayers[p.id]) ? 'deselect all' : 'select all'}
                 </button>
@@ -515,10 +515,10 @@ export default function Commissioner({ session, player, loading }) {
                         </button>
                         <div>
                           <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:"0.95rem",letterSpacing:"2px",
-                            color: hasPhone ? '#eef0f5' : '#666'}}>
+                            color: hasPhone ? '#eef0f5' : '#bbb'}}>
                             {p.name.toUpperCase()}
                           </div>
-                          <div style={{fontSize:"0.58rem",fontFamily:"'JetBrains Mono',monospace",color:"#555",marginTop:"1px"}}>
+                          <div style={{fontSize:"0.58rem",fontFamily:"'JetBrains Mono',monospace",color:"#aaa",marginTop:"1px"}}>
                             {hasPhone ? `${p.phone.slice(0,3)}•••${p.phone.slice(-4)}` : 'no phone'}
                             {nextRace && (hasPick
                               ? <span style={{color:'#4a7a4a',marginLeft:'8px'}}>✓ picked</span>
@@ -531,7 +531,7 @@ export default function Commissioner({ session, player, loading }) {
                         style={{
                           background: hasPhone ? '#1a0808' : '#111118',
                           border: `1px solid ${hasPhone ? '#E8002D' : '#1e1e2c'}`,
-                          color: hasPhone ? '#E8002D' : '#555',
+                          color: hasPhone ? '#E8002D' : '#aaa',
                           borderRadius:'6px',padding:'5px 12px',cursor: hasPhone ? 'pointer' : 'not-allowed',
                           fontFamily:"'JetBrains Mono',monospace",fontSize:"0.65rem",letterSpacing:"1px",
                           opacity: isSending ? 0.5 : 1
@@ -556,7 +556,7 @@ export default function Commissioner({ session, player, loading }) {
             </Card>
 
             {/* Help text */}
-            <div style={{fontSize:"0.58rem",color:"#4a4a5a",fontFamily:"'JetBrains Mono',monospace",textAlign:"center",marginTop:"8px"}}>
+            <div style={{fontSize:"0.58rem",color:"#999",fontFamily:"'JetBrains Mono',monospace",textAlign:"center",marginTop:"8px"}}>
               automated reminders run at 24hr and 2hr before lock via cron
             </div>
           </div>
@@ -565,17 +565,17 @@ export default function Commissioner({ session, player, loading }) {
         {/* PLAYERS */}
         {section === 'players' && (
           <Card>
-            <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:"0.82rem",letterSpacing:"2px",color:"#666",marginBottom:"12px"}}>REGISTERED PLAYERS</div>
-            <div className="text-xs text-[#666] mb-4">Players register themselves via the Sign Up page. To make someone commissioner, update their record in the Supabase dashboard → Table Editor → players → set is_commissioner = true.</div>
+            <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:"0.82rem",letterSpacing:"2px",color:"#bbb",marginBottom:"12px"}}>REGISTERED PLAYERS</div>
+            <div className="text-xs text-[#bbb] mb-4">Players register themselves via the Sign Up page. To make someone commissioner, update their record in the Supabase dashboard → Table Editor → players → set is_commissioner = true.</div>
             {players.map(p => (
               <div key={p.id} className="flex justify-between items-center py-3 border-b border-[#111118]">
                 <div>
                   <div className="font-semibold">{p.name}</div>
-                  <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:"0.62rem",color:"#666",marginTop:"2px"}}>{p.email}</div>
+                  <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:"0.62rem",color:"#bbb",marginTop:"2px"}}>{p.email}</div>
                 </div>
                 <div className="flex items-center gap-3">
                   <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:"0.7rem",letterSpacing:"1px",
-                    color: (p.autopicks_used||0) >= 2 ? '#E8002D' : (p.autopicks_used||0) === 1 ? '#FFD060' : '#555'}}>
+                    color: (p.autopicks_used||0) >= 2 ? '#E8002D' : (p.autopicks_used||0) === 1 ? '#FFD060' : '#aaa'}}>
                     🎲 {2 - (p.autopicks_used||0)}/2 LEFT
                   </div>
                   {p.is_commissioner && (

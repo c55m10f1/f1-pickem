@@ -105,9 +105,9 @@ export default function Results({ session, player, loading }) {
           <div className="bg-[#111118] px-4 py-3 border-b border-[#1e1e2c] flex justify-between items-center">
             <div>
               <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:"1.3rem",letterSpacing:"2px"}}>{race?.name}</div>
-              <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:"0.6rem",color:"#666"}}>{race?.date}</div>
+              <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:"0.6rem",color:"#bbb"}}>{race?.date}</div>
             </div>
-            <span className={`text-[11px] font-mono px-2.5 py-1 rounded border ${result ? 'bg-green-950 border-green-900 text-green-400' : 'bg-[#1a1a24] border-[#2e2e42] text-[#555]'}`}>
+            <span className={`text-[11px] font-mono px-2.5 py-1 rounded border ${result ? 'bg-green-950 border-green-900 text-green-400' : 'bg-[#1a1a24] border-[#2e2e42] text-[#aaa]'}`}>
               {result ? '✓ FINAL' : 'PENDING'}
             </span>
           </div>
@@ -126,7 +126,7 @@ export default function Results({ session, player, loading }) {
           {/* Header row */}
           <div className="results-grid px-4 py-2 border-b border-[#1e1e2c]">
             {['PLAYER','PICKS','P1','P2','P3','BONUS','TOTAL'].map((h, i) => (
-              <div key={h} style={{fontFamily:"'JetBrains Mono',monospace",fontSize:"0.55rem",color:"#555",
+              <div key={h} style={{fontFamily:"'JetBrains Mono',monospace",fontSize:"0.55rem",color:"#aaa",
                 textAlign: i >= 2 ? 'center' : 'left'}}>{h}</div>
             ))}
           </div>
@@ -139,12 +139,12 @@ export default function Results({ session, player, loading }) {
               const actual = res ? [res.p1, res.p2, res.p3] : []
               const exactMatch = (d, j) => d === actual[j]
               const wrongSpot = (d, j) => !exactMatch(d, j) && actual.includes(d)
-              const driverColor = (d, j) => actual.length === 0 ? '#4a4a5a' : exactMatch(d, j) ? '#2ECC71' : wrongSpot(d, j) ? '#7ec8f0' : '#4a4a5a'
+              const driverColor = (d, j) => actual.length === 0 ? '#999' : exactMatch(d, j) ? '#2ECC71' : wrongSpot(d, j) ? '#7ec8f0' : '#999'
               const driverWeight = (d, j) => actual.length > 0 && (exactMatch(d, j) || wrongSpot(d, j)) ? 700 : 400
               const sc = pk && !pk.dns && res ? calcScore(pk, res) : null
               const isPerfect = sc && sc.bonus === 5
               const isAllRight = sc && sc.bonus === 3
-              const ptColor = (v) => v > 0 ? '#eef0f5' : '#4a4a5a'
+              const ptColor = (v) => v > 0 ? '#eef0f5' : '#999'
 
               return (
                 <div key={p.id} className="results-grid px-4 py-3 items-center"
@@ -154,13 +154,13 @@ export default function Results({ session, player, loading }) {
                   <div className="font-semibold" style={{fontSize:'0.82rem'}}>{p.name}</div>
 
                   <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:"0.62rem",lineHeight:'1.5',minWidth:0}}>
-                    {!pk ? <span className="text-[#4a4a5a]">no pick</span>
+                    {!pk ? <span className="text-[#999]">no pick</span>
                       : pk.dns ? <span className="text-red-500">DNS</span>
                       : <span style={{display:'flex',gap:'3px',alignItems:'center',flexWrap:'wrap'}}>
                           {[pk.p1, pk.p2, pk.p3].map((d, j) => (
                             <span key={j}>
                               <span style={{color: driverColor(d,j), fontWeight: driverWeight(d,j)}}>{d}</span>
-                              {j < 2 && <span className="text-[#4a4a5a]"> / </span>}
+                              {j < 2 && <span className="text-[#999]"> / </span>}
                             </span>
                           ))}
                           {isPerfect && <span style={{marginLeft:'3px'}}>🤯</span>}
@@ -169,14 +169,14 @@ export default function Results({ session, player, loading }) {
                     }
                   </div>
 
-                  <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:"0.7rem",textAlign:'center',color:sc?ptColor(sc.p1):'#4a4a5a',fontWeight:sc&&sc.p1>0?700:400}}>{sc?sc.p1:'—'}</div>
-                  <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:"0.7rem",textAlign:'center',color:sc?ptColor(sc.p2):'#4a4a5a',fontWeight:sc&&sc.p2>0?700:400}}>{sc?sc.p2:'—'}</div>
-                  <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:"0.7rem",textAlign:'center',color:sc?ptColor(sc.p3):'#4a4a5a',fontWeight:sc&&sc.p3>0?700:400}}>{sc?sc.p3:'—'}</div>
-                  <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:"0.7rem",textAlign:'center',color:sc&&sc.bonus>0?'#FFD060':'#4a4a5a',fontWeight:sc&&sc.bonus>0?700:400}}>
+                  <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:"0.7rem",textAlign:'center',color:sc?ptColor(sc.p1):'#999',fontWeight:sc&&sc.p1>0?700:400}}>{sc?sc.p1:'—'}</div>
+                  <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:"0.7rem",textAlign:'center',color:sc?ptColor(sc.p2):'#999',fontWeight:sc&&sc.p2>0?700:400}}>{sc?sc.p2:'—'}</div>
+                  <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:"0.7rem",textAlign:'center',color:sc?ptColor(sc.p3):'#999',fontWeight:sc&&sc.p3>0?700:400}}>{sc?sc.p3:'—'}</div>
+                  <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:"0.7rem",textAlign:'center',color:sc&&sc.bonus>0?'#FFD060':'#999',fontWeight:sc&&sc.bonus>0?700:400}}>
                     {sc&&sc.bonus>0?`+${sc.bonus}`:'—'}
                   </div>
                   <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:"1.1rem",textAlign:'center',
-                    color: sc ? (sc.total>=8?'#FFD060':sc.total>=5?'#5a9abf':sc.total>0?'#eef0f5':'#4a4a5a') : '#4a4a5a'}}>
+                    color: sc ? (sc.total>=8?'#FFD060':sc.total>=5?'#5a9abf':sc.total>0?'#eef0f5':'#999') : '#999'}}>
                     {sc ? sc.total : '—'}
                   </div>
                 </div>
@@ -212,7 +212,7 @@ export default function Results({ session, player, loading }) {
                 }}>BB</div>
                 <div>
                   <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:'1rem',letterSpacing:'2px'}}>BRUNDLE BOT</div>
-                  <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:'0.55rem',color:'#666'}}>POST-RACE GRID WALK</div>
+                  <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:'0.55rem',color:'#bbb'}}>POST-RACE GRID WALK</div>
                 </div>
               </div>
               <div style={{padding:'16px'}}>
@@ -225,7 +225,7 @@ export default function Results({ session, player, loading }) {
                     {commentary}
                   </p>
                 ) : (
-                  <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:'0.75rem',color:'#555'}}>
+                  <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:'0.75rem',color:'#aaa'}}>
                     No commentary available.
                   </div>
                 )}
