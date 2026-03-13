@@ -149,7 +149,7 @@ export default function Picks({ session, player, loading }) {
             <div className="bg-[#111118] border border-[#1e1e2c] rounded-lg p-4">
               <Label>YOUR SUBMISSION</Label>
               {!existing ? (
-                <div className="text-[#444] text-sm">No pick submitted for this race.</div>
+                <div className="text-[#666] text-sm">No pick submitted for this race.</div>
               ) : existing.dns ? (
                 <div className="text-[#E8002D] font-mono">DNS — did not submit</div>
               ) : (
@@ -179,7 +179,7 @@ export default function Picks({ session, player, loading }) {
               <div className="flex gap-2">
                 <Btn red full onClick={save} disabled={saving}>SAVE PICKS</Btn>
               </div>
-              <div className="text-xs mt-2" style={{color:'#333',fontFamily:"'JetBrains Mono',monospace"}}>
+              <div className="text-xs mt-2" style={{color:'#555',fontFamily:"'JetBrains Mono',monospace"}}>
                 Miss the deadline? You get 2 random autopicks/season. After that, DNS = 0 pts.
               </div>
             </>
@@ -190,17 +190,17 @@ export default function Picks({ session, player, loading }) {
         {!hasResult && (
           <Card className="mb-4">
             <div className="flex justify-between items-center mb-3">
-              <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:"0.8rem",letterSpacing:"2px",color:"#333"}}>
+              <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:"0.8rem",letterSpacing:"2px",color:"#555"}}>
                 AI RACE ODDS
               </div>
-              <span style={{fontSize:"0.6rem",color:"#2a2a3a",letterSpacing:"1px",fontFamily:"'JetBrains Mono',monospace"}}>
+              <span style={{fontSize:"0.6rem",color:"#4a4a5a",letterSpacing:"1px",fontFamily:"'JetBrains Mono',monospace"}}>
                 powered by claude
               </span>
             </div>
 
             {!aiOdds && !aiLoading && (
               <div className="flex flex-col gap-2">
-                <div style={{color:"#444",fontSize:"0.75rem",fontFamily:"'JetBrains Mono',monospace",marginBottom:"8px"}}>
+                <div style={{color:"#666",fontSize:"0.75rem",fontFamily:"'JetBrains Mono',monospace",marginBottom:"8px"}}>
                   Get AI-powered win probabilities based on current form, qualifying, and betting lines.
                 </div>
                 <button onClick={() => fetchAiOdds(false)}
@@ -257,7 +257,7 @@ export default function Picks({ session, player, loading }) {
                 </div>
                 <div className="flex items-center justify-between" style={{marginTop:'12px'}}>
                   {aiCachedAt && (
-                    <div style={{fontSize:'0.58rem',color:'#2a2a3a',fontFamily:"'JetBrains Mono',monospace"}}>
+                    <div style={{fontSize:'0.58rem',color:'#4a4a5a',fontFamily:"'JetBrains Mono',monospace"}}>
                       updated {new Date(aiCachedAt).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})}
                     </div>
                   )}
@@ -276,10 +276,10 @@ export default function Picks({ session, player, loading }) {
         {(isLocked || hasResult) && (
           <Card className="mb-4">
             <div className="flex justify-between items-center mb-4">
-              <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:"0.8rem",letterSpacing:"2px",color:"#333"}}>
+              <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:"0.8rem",letterSpacing:"2px",color:"#555"}}>
                 EVERYONE'S PICKS
               </div>
-              <div style={{fontSize:"0.6rem",color:"#2a2a3a",letterSpacing:"1px",fontFamily:"'JetBrains Mono',monospace"}}>
+              <div style={{fontSize:"0.6rem",color:"#4a4a5a",letterSpacing:"1px",fontFamily:"'JetBrains Mono',monospace"}}>
                 {hasResult ? '✓ scored' : '🔒 locked'}
               </div>
             </div>
@@ -307,14 +307,14 @@ export default function Picks({ session, player, loading }) {
                         color: isMe ? '#E8002D' : '#888'
                       }}>
                         {p.name.toUpperCase()}
-                        {isMe && <span style={{fontSize:"0.55rem",marginLeft:"6px",color:"#444"}}>YOU</span>}
+                        {isMe && <span style={{fontSize:"0.55rem",marginLeft:"6px",color:"#666"}}>YOU</span>}
                       </div>
                       {pk?.is_autopick && (
                         <span style={{fontSize:"0.55rem",color:"#FFD060",fontFamily:"'JetBrains Mono',monospace"}}>🎲 auto</span>
                       )}
                     </div>
                     {!pk || pk.dns ? (
-                      <div style={{fontSize:"0.7rem",color:"#333",fontFamily:"'JetBrains Mono',monospace"}}>DNS</div>
+                      <div style={{fontSize:"0.7rem",color:"#555",fontFamily:"'JetBrains Mono',monospace"}}>DNS</div>
                     ) : (
                       <div className="flex gap-3">
                         {[['🥇', pk.p1, 1], ['🥈', pk.p2, 2], ['🥉', pk.p3, 3]].map(([medal, driver, pos]) => {
@@ -337,7 +337,7 @@ export default function Picks({ session, player, loading }) {
               })}
             </div>
             {!hasResult && (
-              <div style={{marginTop:'14px',fontSize:'0.62rem',color:'#2a2a3a',fontFamily:"'JetBrains Mono',monospace"}}>
+              <div style={{marginTop:'14px',fontSize:'0.62rem',color:'#4a4a5a',fontFamily:"'JetBrains Mono',monospace"}}>
                 colour coding appears once results are entered
               </div>
             )}
@@ -346,7 +346,7 @@ export default function Picks({ session, player, loading }) {
 
         {/* Season history */}
         <Card>
-          <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:"0.8rem",letterSpacing:"2px",color:"#333",marginBottom:"14px"}}>SEASON HISTORY</div>
+          <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:"0.8rem",letterSpacing:"2px",color:"#555",marginBottom:"14px"}}>SEASON HISTORY</div>
           <div className="flex flex-col">
             {RACES.map(r => {
               const pk = myPicks.find(p => p.race_id === r.id)
@@ -357,13 +357,13 @@ export default function Picks({ session, player, loading }) {
                 <div key={r.id} className="grid gap-2 items-center py-2 border-b border-[#111118] text-sm"
                   style={{gridTemplateColumns:'90px 1fr 44px'}}>
                   <div className="font-semibold" style={{color: res ? '#ccc' : '#555'}}>{r.name}</div>
-                  <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:"0.68rem",color:"#444"}}>
+                  <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:"0.68rem",color:"#666"}}>
                     {pk?.dns ? <span className="text-red-500">DNS</span>
                       : pk ? `${pk.p1} / ${pk.p2} / ${pk.p3}`
-                      : <span className="text-[#2a2a3a]">—</span>}
+                      : <span className="text-[#4a4a5a]">—</span>}
                   </div>
                   <div className="text-right" style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:"1rem",
-                    color: sc ? (sc.total >= 8 ? '#FFD060' : sc.total >= 5 ? '#5a9abf' : '#3a3a4a') : '#2a2a3a'}}>
+                    color: sc ? (sc.total >= 8 ? '#FFD060' : sc.total >= 5 ? '#5a9abf' : '#555') : '#4a4a5a'}}>
                     {sc ? sc.total : '—'}
                   </div>
                 </div>

@@ -38,7 +38,7 @@ function LightsOut({ onComplete }) {
             F1 <span style={{ color: '#E8002D' }}>PICK'EM</span>
           </span>
         </div>
-        <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: '0.65rem', color: '#3a3a4a', letterSpacing: '2px' }}>
+        <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: '0.65rem', color: '#555', letterSpacing: '2px' }}>
           2026 SEASON
         </div>
       </div>
@@ -61,7 +61,7 @@ function LightsOut({ onComplete }) {
         marginTop: '32px',
         fontFamily: "'JetBrains Mono',monospace",
         fontSize: '0.58rem',
-        color: phase >= 6 ? '#E8002D' : '#2a2a3a',
+        color: phase >= 6 ? '#E8002D' : '#4a4a5a',
         letterSpacing: '3px',
         transition: 'color 0.3s ease',
       }}>

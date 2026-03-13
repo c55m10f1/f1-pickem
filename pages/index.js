@@ -60,7 +60,7 @@ export default function Home({ session, player, loading }) {
       <div className="fade-up">
         <div className="mb-6">
           <h1 style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:"2.5rem",letterSpacing:"4px",lineHeight:1}}>STANDINGS</h1>
-          <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:"0.6rem",color:"#3a3a4a",marginTop:"6px",letterSpacing:"1px"}}>
+          <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:"0.6rem",color:"#555",marginTop:"6px",letterSpacing:"1px"}}>
             2026 · {scored}/24 RACES{lastRace ? ` · LAST: ${lastRace.name.toUpperCase()}` : ''}
           </div>
         </div>
@@ -89,7 +89,7 @@ export default function Home({ session, player, loading }) {
                 </div>
                 <div>
                   <div style={{fontWeight:700,fontSize:'1rem'}}>{p.name}</div>
-                  <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:"0.6rem",color:"#3a3a4a",marginTop:'2px'}}>
+                  <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:"0.6rem",color:"#555",marginTop:'2px'}}>
                     {d.races} races · +{d.bonus} bonus pts
                   </div>
                 </div>
@@ -102,12 +102,12 @@ export default function Home({ session, player, loading }) {
             )
           })}
           {sorted.length === 0 && (
-            <Card><div className="text-[#444] text-sm text-center py-4">No players yet — season hasn't started!</div></Card>
+            <Card><div className="text-[#666] text-sm text-center py-4">No players yet — season hasn't started!</div></Card>
           )}
         </div>
 
         <Card>
-          <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:"0.8rem",letterSpacing:"2px",color:"#333",marginBottom:"12px"}}>SCORING RULES</div>
+          <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:"0.8rem",letterSpacing:"2px",color:"#555",marginBottom:"12px"}}>SCORING RULES</div>
           <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
             {[
               ['1 pt',   'Correct driver on podium'],
