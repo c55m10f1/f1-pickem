@@ -150,7 +150,7 @@ function QualiCountdown({ race }) {
             <div style={{
               fontFamily:"'JetBrains Mono',monospace",
               fontSize:'0.62rem',
-              color:'#666',
+              color:'#bbb',
               marginTop:'4px',
               letterSpacing:'1px'
             }}>
@@ -202,7 +202,7 @@ function QualiCountdown({ race }) {
                 <div style={{
                   fontFamily:"'JetBrains Mono',monospace",
                   fontSize:'0.5rem',
-                  color:'#555',
+                  color:'#aaa',
                   letterSpacing:'2px',
                   marginTop:'2px'
                 }}>
@@ -221,14 +221,14 @@ function QualiCountdown({ race }) {
             <div style={{
               fontFamily:"'JetBrains Mono',monospace",
               fontSize:'0.55rem',
-              color:'#555',
+              color:'#aaa',
               letterSpacing:'1px',
               marginBottom:'2px'
             }}>RACE START</div>
             <div style={{
               fontFamily:"'Bebas Neue',sans-serif",
               fontSize:'0.85rem',
-              color:'#666',
+              color:'#bbb',
               letterSpacing:'1px'
             }}>
               {new Date(race.raceStart).toLocaleString('en-US', {
@@ -307,7 +307,7 @@ function RaceStartCountdown({ race }) {
             <div style={{
               fontFamily:"'JetBrains Mono',monospace",
               fontSize:'0.62rem',
-              color:'#666',
+              color:'#bbb',
               marginTop:'4px',
               letterSpacing:'1px'
             }}>
@@ -335,7 +335,7 @@ function RaceStartCountdown({ race }) {
                 <div style={{
                   fontFamily:"'Bebas Neue',sans-serif",
                   fontSize:'1.4rem',
-                  color:'#4a4a5a',
+                  color:'#999',
                   marginTop:'-8px'
                 }}>:</div>
               )}
@@ -355,7 +355,7 @@ function RaceStartCountdown({ race }) {
                 <div style={{
                   fontFamily:"'JetBrains Mono',monospace",
                   fontSize:'0.5rem',
-                  color:'#555',
+                  color:'#aaa',
                   letterSpacing:'2px',
                   marginTop:'2px'
                 }}>
@@ -375,14 +375,14 @@ function RaceStartCountdown({ race }) {
               <div style={{
                 fontFamily:"'JetBrains Mono',monospace",
                 fontSize:'0.55rem',
-                color:'#666',
+                color:'#bbb',
                 letterSpacing:'1px',
                 marginBottom:'2px'
               }}>PICKS LOCK IN</div>
               <div style={{
                 fontFamily:"'Bebas Neue',sans-serif",
                 fontSize:'1rem',
-                color: isUrgent ? '#E8002D' : '#666',
+                color: isUrgent ? '#E8002D' : '#bbb',
                 letterSpacing:'1px'
               }}>
                 {qualiCountdown.days > 0
