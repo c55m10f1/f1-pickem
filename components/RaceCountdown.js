@@ -117,7 +117,7 @@ function QualiCountdown({ race }) {
           </div>
 
           <div style={{opacity:0.2, flexShrink:0}}>
-            <img src={trackFile} alt="" width="200" height="200"
+            <img src={trackFile} alt="" width="120" height="120"
               style={{filter: isUrgent ? 'brightness(0) saturate(100%) invert(12%) sepia(95%) saturate(7000%) hue-rotate(347deg)' : 'brightness(0) saturate(100%) invert(72%) sepia(55%) saturate(1000%) hue-rotate(5deg)'}} />
           </div>
         </div>
@@ -268,7 +268,7 @@ function RaceStartCountdown({ race }) {
           </div>
 
           <div style={{opacity:0.25, flexShrink:0}}>
-            <img src={trackFile} alt="" width="200" height="200"
+            <img src={trackFile} alt="" width="120" height="120"
               style={{filter: 'brightness(0) saturate(100%) invert(12%) sepia(95%) saturate(7000%) hue-rotate(347deg)'}} />
           </div>
         </div>
