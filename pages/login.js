@@ -19,6 +19,18 @@ export default function Login() {
     setLoading(false)
   }
 
+  const resetPassword = async () => {
+    setErr(null); setMsg(null)
+    if (!email.trim()) return setErr('Enter your email first')
+    setLoading(true)
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: 'https://f1-pickem-six.vercel.app/reset-password'
+    })
+    if (error) setErr(error.message)
+    else setMsg('Password reset link sent — check your email!')
+    setLoading(false)
+  }
+
   return (
     <div className="min-h-screen bg-[#0d0d12] flex items-center justify-center px-4">
       <style>{`@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap');
@@ -64,6 +76,13 @@ export default function Login() {
 
           <div className="mt-4 text-center" style={{fontSize:"0.62rem",color:"#aaa",fontFamily:"'JetBrains Mono',monospace",letterSpacing:"1px"}}>
             registration for 2026 is closed
+          </div>
+          <div className="mt-3 text-center">
+            <button onClick={resetPassword} disabled={loading}
+              style={{background:'none',border:'none',cursor:'pointer',fontFamily:"'JetBrains Mono',monospace",
+                fontSize:'0.65rem',color:'#E8002D',letterSpacing:'0.5px'}}>
+              forgot password?
+            </button>
           </div>
         </div>
 
