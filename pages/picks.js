@@ -145,6 +145,20 @@ export default function Picks({ session, player, loading }) {
             </div>
           )}
 
+          {existing && !existing.dns && !readonly && (
+            <div className="flex items-center gap-2 mb-3 px-3 py-2 rounded-lg" style={{background:'#0a1a0a',border:'1px solid #1a3a1a'}}>
+              <span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:'0.65rem',color:'#4ade80',letterSpacing:'1px'}}>
+                ✓ PICKS SAVED
+              </span>
+              <span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:'0.58rem',color:'#888'}}>
+                — {existing.p1} / {existing.p2} / {existing.p3}
+              </span>
+              {existing.is_autopick && (
+                <span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:'0.55rem',color:'#FFD060',marginLeft:'auto'}}>🎲 AUTO</span>
+              )}
+            </div>
+          )}
+
           {readonly ? (
             <div className="bg-[#111118] border border-[#1e1e2c] rounded-lg p-4">
               <Label>YOUR SUBMISSION</Label>
