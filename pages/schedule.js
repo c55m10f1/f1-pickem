@@ -93,7 +93,7 @@ export default function Schedule({ session, player }) {
                     position:'absolute', right:'-10px', top:'50%', transform:'translateY(-50%)',
                     opacity: isNext ? 0.12 : 0.06, pointerEvents:'none'
                   }}>
-                    <img src={trackFile} alt="" width="120" height="120"
+                    <img src={trackFile} alt="" width="90" height="90"
                       style={{filter: isNext
                         ? 'brightness(0) saturate(100%) invert(12%) sepia(95%) saturate(7000%) hue-rotate(347deg)'
                         : 'brightness(0) invert(1)'}} />
